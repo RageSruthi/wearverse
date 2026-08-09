@@ -1,151 +1,90 @@
 // src/Upcycle.jsx
 import { useState } from "react";
-import { useStore } from "./StoreContext";
 
 export default function Upcycle() {
-  const { addNotification } = useStore();
-  const [requested, setRequested] = useState(false);
-  const [upcycleForm, setUpcycleForm] = useState({
-    clothingType: "Old Denim Jeans",
-    targetItem: "Custom Tote Bag & Patchwork Jacket",
-    notes: "Has slight tears on knees, rest of fabric is sturdy denim.",
-  });
+  const [assignedTailor, setAssignedTailor] = useState(null);
 
-  const upcycledItems = [
+  const nearestTailors = [
     {
-      id: "up-1",
-      title: "Handcrafted Denim Patchwork Jacket",
-      original: "Made from 3 repurposed denim jeans",
-      price: 1899,
-      artisan: "Studio Upcycle Mumbai",
-      image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=600&q=80",
-      ecoScore: "100% Circular",
+      id: "tailor-1",
+      name: "Masterji Crafts & Alterations Studio",
+      artisan: "Master Ramesh Kumar",
+      phone: "+91 98123 45678",
+      address: "Shop 14, Linking Road, Bandra West, Mumbai - 400050",
+      distance: "1.2 km away",
+      specialty: "Repairs torn denim, converts old sarees to tote bags & jackets",
+      rating: "4.9 ★",
     },
     {
-      id: "up-2",
-      title: "Silk Saree Reusable Tote Bag",
-      original: "Upcycled from pre-loved Banarasi saree",
-      price: 649,
-      artisan: "Kala Artisans Collective",
-      image: "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=600&q=80",
-      ecoScore: "Zero Waste",
+      id: "tailor-2",
+      name: "Kala Artisan Tailoring Collective",
+      artisan: "Sunita Devi",
+      phone: "+91 97654 89012",
+      address: "Plot 42, Commercial Complex, Dadar West, Mumbai - 400028",
+      distance: "2.5 km away",
+      specialty: "Embroidery, patchwork cushions, upcycled ethnic jackets",
+      rating: "4.8 ★",
     },
     {
-      id: "up-3",
-      title: "Quilted Vintage Cotton Vest",
-      original: "Crafted from vintage floral dress scraps",
-      price: 1299,
-      artisan: "ReWear Studio",
-      image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80",
-      ecoScore: "Upcycled Fiber",
-    },
-    {
-      id: "up-4",
-      title: "Upcycled Denim Cushion Covers (Set of 2)",
-      original: "Repurposed dark wash jeans fabric",
-      price: 799,
-      artisan: "EcoHome Collective",
-      image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=600&q=80",
-      ecoScore: "Home Textiles",
+      id: "tailor-3",
+      name: "EcoStitch Alteration Hub",
+      artisan: "Abdul Rahim",
+      phone: "+91 98901 23456",
+      address: "Near Metro Station Gate 2, Andheri West, Mumbai - 400058",
+      distance: "3.8 km away",
+      specialty: "Sleeve repairs, zip replacements, custom fabric tote bags",
+      rating: "4.7 ★",
     },
   ];
-
-  function handleSubmitUpcycle(e) {
-    e.preventDefault();
-    setRequested(true);
-    addNotification(
-      "Upcycle Request Received ✂️",
-      `Your request to upcycle "${upcycleForm.clothingType}" into "${upcycleForm.targetItem}" has been submitted to artisan partners.`,
-      "✂️"
-    );
-  }
 
   return (
     <div className="page">
       <div className="page-heading">
-        <span className="label">CIRCULAR CREATIVITY</span>
-        <h1>Upcycle Studio</h1>
-        <p>Transforming old, unwearable garments into high-value artisan fashion & accessories.</p>
+        <span className="label">UPCYCLE STUDIO & TAILOR DIRECTORY</span>
+        <h1>Nearest Artisan Tailors for Slightly Damaged Clothes</h1>
+        <p>If your garment is slightly torn or damaged, send it to a verified local tailor to repair or upcycle it into custom tote bags, jackets, or home decor.</p>
       </div>
 
-      {/* Upcycled Showcase Grid */}
-      <h2 className="section-subheading">Artisan Upcycled Collection</h2>
-      <div className="products">
-        {upcycledItems.map((item) => (
-          <div className="product" key={item.id}>
-            <div className="product-image">
-              <span className="badge">✂️ UPCYCLED ART</span>
-              <img src={item.image} alt={item.title} className="product-photo" />
+      {assignedTailor && (
+        <div style={{ background: "#edf4ef", border: "1px solid #c8d8ce", padding: "20px", borderRadius: "16px", marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <h3 style={{ margin: "0 0 4px", color: "#174d39" }}>✂️ Garment Assigned to {assignedTailor.name}</h3>
+            <p style={{ margin: 0, fontSize: "13px", color: "#555" }}>Doorstep courier pickup requested. Contact Tailor: <strong>{assignedTailor.phone}</strong></p>
+          </div>
+          <button className="secondary" onClick={() => setAssignedTailor(null)}>Clear Assignment</button>
+        </div>
+      )}
+
+      {/* Directory Cards of Nearest Tailors with Contact Info */}
+      <h2 style={{ fontSize: "22px", marginBottom: "16px" }}>📍 Verified Local Tailors Near You</h2>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px" }}>
+        {nearestTailors.map((tailor) => (
+          <div key={tailor.id} style={{ background: "white", border: "1px solid #e1ebe4", borderRadius: "16px", padding: "24px", boxShadow: "0 4px 15px rgba(0,0,0,0.04)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+              <span style={{ background: "#edf4ef", color: "#174d39", padding: "4px 8px", borderRadius: "8px", fontSize: "11px", fontWeight: "bold" }}>
+                {tailor.distance}
+              </span>
+              <span style={{ fontSize: "12px", fontWeight: "bold", color: "#276749" }}>{tailor.rating}</span>
             </div>
-            <div className="product-info">
-              <small>{item.ecoScore} · {item.artisan}</small>
-              <h3>{item.title}</h3>
-              <p>{item.original}</p>
-              <div className="price-row">
-                <b>₹{item.price}</b>
-                <span>Artisan Made</span>
-              </div>
+
+            <h3 style={{ margin: "0 0 4px", fontSize: "17px" }}>{tailor.name}</h3>
+            <p style={{ margin: "0 0 8px", fontSize: "12px", color: "#666" }}>Master Artisan: <strong>{tailor.artisan}</strong></p>
+            <p style={{ margin: "0 0 12px", fontSize: "12px", color: "#39805a" }}>Specialty: {tailor.specialty}</p>
+
+            <div style={{ background: "#f8faf9", padding: "10px", borderRadius: "10px", marginBottom: "16px", fontSize: "12px" }}>
+              <div>📍 <strong>Address:</strong> {tailor.address}</div>
+              <div>📞 <strong>Contact Number:</strong> <a href={`tel:${tailor.phone}`} style={{ color: "#174d39", fontWeight: "bold" }}>{tailor.phone}</a></div>
             </div>
+
+            <button
+              className="primary"
+              style={{ width: "100%", padding: "10px", fontSize: "13px" }}
+              onClick={() => setAssignedTailor(tailor)}
+            >
+              ✂️ Send Clothes to {tailor.artisan} →
+            </button>
           </div>
         ))}
-      </div>
-
-      {/* Custom Upcycling Request Form */}
-      <div className="upcycle-request-card">
-        <h2>✂️ Send Your Clothes to Our Upcycle Artisans</h2>
-        <p>Have old clothes sitting in your closet? Let our verified partner artisans redesign them into custom tote bags, jackets, or home decor!</p>
-
-        {!requested ? (
-          <form onSubmit={handleSubmitUpcycle} className="upcycle-form">
-            <div className="form-row-2">
-              <label>
-                What clothes are you sending?
-                <input
-                  type="text"
-                  required
-                  value={upcycleForm.clothingType}
-                  onChange={(e) => setUpcycleForm({ ...upcycleForm, clothingType: e.target.value })}
-                />
-              </label>
-
-              <label>
-                What would you like it turned into?
-                <select
-                  value={upcycleForm.targetItem}
-                  onChange={(e) => setUpcycleForm({ ...upcycleForm, targetItem: e.target.value })}
-                >
-                  <option>Custom Tote Bag & Patchwork Accent</option>
-                  <option>Upcycled Patchwork Jacket</option>
-                  <option>Quilted Cushion Covers</option>
-                  <option>Artisan Laptop Sleeve</option>
-                  <option>Let Artisan Decide</option>
-                </select>
-              </label>
-            </div>
-
-            <label>
-              Special Notes / Preferences
-              <textarea
-                value={upcycleForm.notes}
-                onChange={(e) => setUpcycleForm({ ...upcycleForm, notes: e.target.value })}
-                placeholder="Tell us about the fabric, color preferences, or any specific requests..."
-              />
-            </label>
-
-            <button type="submit" className="sell-primary">
-              Submit Upcycling Request →
-            </button>
-          </form>
-        ) : (
-          <div className="modal-success">
-            <div className="success-icon">✓</div>
-            <h3>Upcycle Request Submitted!</h3>
-            <p>Our artisan partners will inspect your request and send a doorstep pickup courier within 48 hours.</p>
-            <button className="sell-secondary" onClick={() => setRequested(false)}>
-              Send Another Item
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

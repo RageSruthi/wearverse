@@ -1,8 +1,7 @@
 // src/Shop.jsx
 import { useMemo, useState } from "react";
 import { useStore } from "./StoreContext";
-import { BRANDS, CATEGORIES, COLORS, CONDITIONS, MATERIALS, SIZES } from "./mockDataGenerator";
-import { productService } from "./mockServices";
+import { CATEGORIES, COLORS, CONDITIONS, MATERIALS, SIZES } from "./mockDataGenerator";
 
 export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }) {
   const { products, addToCart, wishlist, toggleWishlist, recordView } = useStore();
@@ -11,30 +10,64 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
   const [category, setCategory] = useState("All");
   const [size, setSize] = useState("All");
   const [color, setColor] = useState("All");
-  const [brand, setBrand] = useState("All");
   const [condition, setCondition] = useState("All");
   const [material, setMaterial] = useState("All");
-  const [mode, setMode] = useState("all"); // 'all' | 'shop' | 'rent'
+  const [mode, setMode] = useState("all");
   const [maxPrice, setMaxPrice] = useState(10000);
   const [sortBy, setSortBy] = useState("relevance");
   const [visibleCount, setVisibleCount] = useState(24);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Compute filtered products using decoupled productService
+  // Compute filtered products with strict color checking
   const filteredProducts = useMemo(() => {
-    return productService.search(products, {
-      query,
-      category,
-      size,
-      color,
-      brand,
-      condition,
-      material,
-      mode,
-      maxPrice: Number(maxPrice),
-      sortBy,
+    let result = products.filter((p) => {
+      if (category !== "All" && p.category !== category) return false;
+      if (size !== "All" && p.size !== size && !p.sizesAvailable?.includes(size)) return false;
+
+      // Strict Color Filter
+      if (color !== "All" && p.color.toLowerCase() !== color.toLowerCase()) return false;
+
+      if (condition !== "All" && p.condition !== condition) return false;
+      if (material !== "All" && p.material !== material) return false;
+
+      if (mode === "shop" && p.mode === "rent") return false;
+      if (mode === "rent" && p.mode === "shop") return false;
+
+      const pPrice = mode === "rent" ? p.rentalPrice : p.price;
+      if (pPrice > maxPrice) return false;
+
+      if (query.trim()) {
+        const q = query.trim().toLowerCase();
+        const searchTarget = `${p.title} ${p.category} ${p.subcategory} ${p.color} ${p.material} ${p.sellerName}`.toLowerCase();
+        if (!searchTarget.includes(q)) return false;
+      }
+
+      return true;
     });
-  }, [products, query, category, size, color, brand, condition, material, mode, maxPrice, sortBy]);
+
+    // Sorting
+    switch (sortBy) {
+      case "price_asc":
+        result.sort((a, b) => (mode === "rent" ? a.rentalPrice - b.rentalPrice : a.price - b.price));
+        break;
+      case "price_desc":
+        result.sort((a, b) => (mode === "rent" ? b.rentalPrice - a.rentalPrice : b.price - a.price));
+        break;
+      case "newest":
+        result.sort((a, b) => b.createdAt - a.createdAt);
+        break;
+      case "rating":
+        result.sort((a, b) => b.rating - a.rating);
+        break;
+      case "popular":
+        result.sort((a, b) => b.reviewsCount - a.reviewsCount);
+        break;
+      default:
+        break;
+    }
+
+    return result;
+  }, [products, query, category, size, color, condition, material, mode, maxPrice, sortBy]);
 
   const displayedProducts = filteredProducts.slice(0, visibleCount);
 
@@ -43,7 +76,6 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
     setCategory("All");
     setSize("All");
     setColor("All");
-    setBrand("All");
     setCondition("All");
     setMaterial("All");
     setMode("all");
@@ -66,7 +98,7 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
           <input
             type="text"
             className="shop-search-input"
-            placeholder="Search frocks, sarees, denim jackets, silk, black dresses, FabIndia..."
+            placeholder="Search frocks, sarees, denim jackets, silk, black dresses..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -83,7 +115,7 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
             className={`filter-toggle-btn ${showFilters ? "active" : ""}`}
             onClick={() => setShowFilters((prev) => !prev)}
           >
-            🎛️ Filters {category !== "All" || size !== "All" || color !== "All" || mode !== "all" ? "•" : ""}
+            🎛️ Filters {color !== "All" || category !== "All" || condition !== "All" ? "•" : ""}
           </button>
 
           <div className="sort-wrapper">
@@ -125,11 +157,30 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
         ))}
       </div>
 
-      {/* Expanded Multi-Filter Panel */}
+      {/* Color Filter Quick Strip */}
+      <div className="color-pills-row" style={{ display: "flex", gap: "8px", overflowX: "auto", marginBottom: "20px" }}>
+        <button
+          className={`cat-pill ${color === "All" ? "active" : ""}`}
+          onClick={() => setColor("All")}
+        >
+          🎨 All Colors
+        </button>
+        {COLORS.map((clr) => (
+          <button
+            key={clr}
+            className={`cat-pill ${color === clr ? "active" : ""}`}
+            onClick={() => setColor(clr)}
+          >
+            {clr}
+          </button>
+        ))}
+      </div>
+
+      {/* Expanded Multi-Filter Panel (Brand Filter Removed as requested) */}
       {showFilters && (
         <div className="filter-drawer">
           <div className="filter-drawer-header">
-            <h3>🎛️ Advanced Marketplace Filters</h3>
+            <h3>🎛️ Marketplace Filters</h3>
             <button className="reset-link" onClick={resetFilters}>Reset All Filters</button>
           </div>
 
@@ -144,16 +195,6 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
             </div>
 
             <div>
-              <label>Size</label>
-              <select value={size} onChange={(e) => setSize(e.target.value)}>
-                <option value="All">All Sizes</option>
-                {SIZES.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
               <label>Color</label>
               <select value={color} onChange={(e) => setColor(e.target.value)}>
                 <option value="All">All Colors</option>
@@ -164,21 +205,21 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
             </div>
 
             <div>
-              <label>Brand</label>
-              <select value={brand} onChange={(e) => setBrand(e.target.value)}>
-                <option value="All">All Brands</option>
-                {BRANDS.map((b) => (
-                  <option key={b} value={b}>{b}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
               <label>Condition</label>
               <select value={condition} onChange={(e) => setCondition(e.target.value)}>
                 <option value="All">All Conditions</option>
                 {CONDITIONS.map((cd) => (
                   <option key={cd} value={cd}>{cd}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label>Size</label>
+              <select value={size} onChange={(e) => setSize(e.target.value)}>
+                <option value="All">All Sizes</option>
+                {SIZES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
                 ))}
               </select>
             </div>
@@ -211,11 +252,11 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
       {/* Product Cards Grid */}
       <div className="products">
         {filteredProducts.length === 0 && (
-          <div className="no-results-box">
-            <div className="no-res-icon">🔍</div>
-            <h3>No products found matching your search or filters</h3>
-            <p>Try clearing some filters or searching for terms like "frock", "saree", "denim", or "kurti".</p>
-            <button className="sell-primary" onClick={resetFilters}>
+          <div className="no-results-box" style={{ gridColumn: "1 / -1", padding: "60px", textAlign: "center", background: "#ffffff", borderRadius: "16px", border: "1px solid #e1ebe4" }}>
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔍</div>
+            <h3 style={{ margin: "0 0 8px", fontSize: "20px" }}>No products found matching your search or filters</h3>
+            <p style={{ color: "#666", marginBottom: "20px" }}>Try clearing some filters or searching for terms like "frock", "saree", "denim", or "kurti".</p>
+            <button className="primary" onClick={resetFilters}>
               Reset Filters & Search
             </button>
           </div>
@@ -255,7 +296,7 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
                   }}
                 />
 
-                {/* Hover Quick Actions */}
+                {/* Clean Hover Actions - No Green Card Overlay */}
                 <div className="quick-actions-overlay">
                   <button
                     className="quick-act-btn tryon"
@@ -274,7 +315,7 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
                       if (onOpenDetail) onOpenDetail(item);
                     }}
                   >
-                    👁️ View Details
+                    👁️ Details
                   </button>
                 </div>
               </div>
@@ -300,7 +341,7 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
 
                 <div className="card-buttons">
                   <button
-                    className="sell-primary add-cart-btn"
+                    className="primary add-cart-btn"
                     onClick={(e) => {
                       e.stopPropagation();
                       addToCart(item, { mode: item.mode === "rent" ? "rent" : "shop" });
@@ -310,7 +351,7 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
                   </button>
                   {item.mode !== "shop" && (
                     <button
-                      className="sell-secondary rent-btn"
+                      className="secondary rent-btn"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (onOpenRentalCalendar) onOpenRentalCalendar(item);
@@ -328,12 +369,12 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
 
       {/* Pagination Load More Button */}
       {displayedProducts.length < filteredProducts.length && (
-        <div className="load-more-container">
-          <p className="load-progress">
-            Showing {displayedProducts.length} of {filteredProducts.length} items
+        <div className="load-more-container" style={{ marginTop: "32px", textAlign: "center" }}>
+          <p className="load-progress" style={{ color: "#666", marginBottom: "12px" }}>
+            Showing {displayedProducts.length} of {filteredProducts.length.toLocaleString()} items
           </p>
           <button
-            className="sell-primary load-more-btn"
+            className="primary load-more-btn"
             onClick={() => setVisibleCount((prev) => prev + 24)}
           >
             Load More Products ({filteredProducts.length - displayedProducts.length} remaining) →

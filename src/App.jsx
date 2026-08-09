@@ -14,7 +14,6 @@ import Dashboard from "./Dashboard";
 import ChatBot from "./ChatBot";
 import VirtualTryOn from "./VirtualTryOn";
 import ProductDetailModal from "./ProductDetailModal";
-import RentalCalendar from "./RentalCalendar";
 import OrderTrackingModal from "./OrderTrackingModal";
 
 export const DEFAULT_FALLBACK_IMG = "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80";
@@ -25,9 +24,8 @@ function AppShell() {
   // Modals state
   const [detailProduct, setDetailProduct] = useState(null);
   const [tryOnProduct, setTryOnProduct] = useState(null);
-  const [rentalProduct, setRentalProduct] = useState(null);
   const [trackingOrderId, setTrackingOrderId] = useState(null);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const {
     role,
@@ -37,61 +35,70 @@ function AppShell() {
     sellers,
     cart,
     wishlist,
-    notifications,
-    markNotificationsRead,
   } = useStore();
 
-  const unreadNotifs = notifications.filter((n) => !n.read).length;
-
+  // BUYER NAV: Home, Shop, Rent, Cart, Dashboard (Upcycle & Recycle removed from Buyer nav)
+  // SELLER NAV: Upload, Upcycle Studio, Recycle Network (Dashboard removed for Seller nav)
   const navItems =
     role === "seller"
-      ? ["Home", "Upload", "Shop", "Rent", "Upcycle", "Recycle", "Dashboard"]
-      : ["Home", "Shop", "Rent", "Upcycle", "Recycle", "Cart", "Dashboard"];
+      ? ["Upload", "Upcycle Studio", "Recycle Network"]
+      : ["Home", "Shop", "Rent", "Cart", "Dashboard"];
 
   return (
     <div className="app-top-layout">
       {/* Top E-Commerce Horizontal Navigation Bar */}
       <header className="top-navbar-v2">
         <div className="nav-container-inner">
-          {/* LEFT: Logo & Brand */}
-          <div className="brand-logo-box" onClick={() => setPage("Home")} style={{ cursor: "pointer" }}>
+          {/* TOP LEFT: WEARVERSE Logo & Tagline */}
+          <div className="brand-logo-box" onClick={() => setPage(role === "seller" ? "Upload" : "Home")} style={{ cursor: "pointer" }}>
             <div className="brand-icon">W</div>
             <div className="brand-text">
               <span className="brand-title">WEARVERSE</span>
-              <small className="brand-sub">CIRCULAR FASHION</small>
+              <small className="brand-sub" style={{ color: "#a3cfbb", fontSize: "9px", fontWeight: "bold" }}>
+                Give your clothes a Second life
+              </small>
             </div>
           </div>
 
           {/* CENTER: Main Horizontal Links */}
           <nav className="horizontal-nav-links">
-            {navItems.map((item) => (
-              <button
-                key={item}
-                className={`top-nav-btn ${page === item ? "active" : ""}`}
-                onClick={() => setPage(item)}
-              >
-                <span>{iconFor(item)}</span>
-                {item}
-                {item === "Cart" && cart.length > 0 && (
-                  <span className="nav-badge">{cart.length}</span>
-                )}
-              </button>
-            ))}
+            {navItems.map((item) => {
+              const targetPage = item === "Upcycle Studio" ? "Upcycle" : item === "Recycle Network" ? "Recycle" : item;
+              return (
+                <button
+                  key={item}
+                  className={`top-nav-btn ${page === targetPage ? "active" : ""}`}
+                  onClick={() => setPage(targetPage)}
+                >
+                  <span>{iconFor(item)}</span>
+                  {item}
+                  {item === "Cart" && cart.length > 0 && (
+                    <span className="nav-badge">{cart.length}</span>
+                  )}
+                </button>
+              );
+            })}
           </nav>
 
-          {/* RIGHT: Notifications, Cart, Role Switcher, Profile */}
+          {/* TOP RIGHT: Role Switcher, Cart, Profile (Bell Icon Removed) */}
           <div className="top-nav-actions">
             {/* Role & Seller Switcher */}
             <div className="role-switch-pill">
               <button
                 className={role === "buyer" ? "mode-btn active" : "mode-btn"}
-                onClick={() => setRole("buyer")}
+                onClick={() => {
+                  setRole("buyer");
+                  setPage("Home");
+                }}
               >
                 🛒 Buyer
               </button>
               <button
                 className={role === "seller" ? "mode-btn active" : "mode-btn"}
-                onClick={() => setRole("seller")}
+                onClick={() => {
+                  setRole("seller");
+                  setPage("Upload");
+                }}
               >
                 🏪 Seller
               </button>
@@ -111,53 +118,22 @@ function AppShell() {
               )}
             </div>
 
-            {/* Notifications Dropdown Trigger */}
-            <div className="notif-wrapper">
-              <button
-                className="topbar-icon-btn"
-                onClick={() => {
-                  setShowNotifications((prev) => !prev);
-                  markNotificationsRead();
-                }}
-                title="Notifications"
-              >
-                🔔 {unreadNotifs > 0 && <span className="topbar-badge">{unreadNotifs}</span>}
+            {/* Wishlist Button (Buyer Only) */}
+            {role === "buyer" && (
+              <button className="topbar-icon-btn" onClick={() => setPage("Dashboard")} title="Wishlist">
+                ♡ {wishlist.length > 0 && <span className="topbar-badge">{wishlist.length}</span>}
               </button>
+            )}
 
-              {showNotifications && (
-                <div className="notif-dropdown">
-                  <div className="notif-dropdown-header">
-                    <h4>Notifications</h4>
-                    <button onClick={() => setShowNotifications(false)}>×</button>
-                  </div>
-                  <div className="notif-dropdown-list">
-                    {notifications.slice(0, 5).map((n) => (
-                      <div className="notif-item" key={n.id}>
-                        <span className="n-icon">{n.icon}</span>
-                        <div>
-                          <strong>{n.title}</strong>
-                          <p>{n.message}</p>
-                          <small>{n.date}</small>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Cart Button (Buyer Only) */}
+            {role === "buyer" && (
+              <button className="topbar-icon-btn" onClick={() => setPage("Cart")} title="Shopping Cart">
+                🛒 {cart.length > 0 && <span className="topbar-badge">{cart.length}</span>}
+              </button>
+            )}
 
-            {/* Wishlist Button */}
-            <button className="topbar-icon-btn" onClick={() => setPage("Dashboard")} title="Wishlist">
-              ♡ {wishlist.length > 0 && <span className="topbar-badge">{wishlist.length}</span>}
-            </button>
-
-            {/* Cart Button */}
-            <button className="topbar-icon-btn" onClick={() => setPage("Cart")} title="Shopping Cart">
-              🛒 {cart.length > 0 && <span className="topbar-badge">{cart.length}</span>}
-            </button>
-
-            {/* User Profile */}
-            <div className="user-profile-pill" onClick={() => setPage("Dashboard")}>
+            {/* User Profile Trigger - Opens Profile Details & Edit Modal */}
+            <div className="user-profile-pill" onClick={() => setShowProfileModal(true)}>
               <img
                 src={
                   role === "seller"
@@ -171,28 +147,26 @@ function AppShell() {
                 }}
               />
               <span className="user-name-text">
-                {role === "seller" ? activeSeller.name : "Sruthi"}
+                {role === "seller" ? activeSeller.name : "Sruthi R."}
               </span>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content View Container */}
+      {/* Main Viewport */}
       <main className="main-viewport-content">
         {page === "Home" && (
           <Home
             setPage={setPage}
             onOpenDetail={setDetailProduct}
             onOpenTryOn={setTryOnProduct}
-            onOpenRentalCalendar={setRentalProduct}
           />
         )}
         {page === "Shop" && (
           <Shop
             onOpenDetail={setDetailProduct}
             onOpenTryOn={setTryOnProduct}
-            onOpenRentalCalendar={setRentalProduct}
           />
         )}
         {page === "Rent" && (
@@ -203,7 +177,7 @@ function AppShell() {
           />
         )}
         {page === "Upcycle" && <Upcycle />}
-        {page === "Recycle" && <Recycle setPage={setPage} />}
+        {page === "Recycle" && <Recycle />}
         {page === "Cart" && (
           <Cart
             setPage={setPage}
@@ -216,25 +190,28 @@ function AppShell() {
           <Dashboard
             setPage={setPage}
             onOpenOrderTracking={setTrackingOrderId}
-            onOpenDetail={setDetailProduct}
-            onOpenTryOn={setTryOnProduct}
           />
         )}
       </main>
 
-      {/* Persistent Support Chatbot anchored bottom-right */}
+      {/* Persistent ChatGPT Style Support Chatbot anchored at Bottom Right */}
       <ChatBot setPage={setPage} />
 
-      {/* Global Modals */}
+      {/* Profile Details & Edit Modal */}
+      {showProfileModal && (
+        <ProfileEditModal onClose={() => setShowProfileModal(false)} />
+      )}
+
+      {/* Product Detail Modal */}
       {detailProduct && (
         <ProductDetailModal
           product={detailProduct}
           onClose={() => setDetailProduct(null)}
           onOpenTryOn={setTryOnProduct}
-          onOpenRentalCalendar={setRentalProduct}
         />
       )}
 
+      {/* Virtual Try-On Modal */}
       {tryOnProduct && (
         <VirtualTryOn
           activeProduct={tryOnProduct}
@@ -242,14 +219,7 @@ function AppShell() {
         />
       )}
 
-      {rentalProduct && (
-        <RentalCalendar
-          item={rentalProduct}
-          onClose={() => setRentalProduct(null)}
-          onRentalConfirmed={() => setPage("Cart")}
-        />
-      )}
-
+      {/* Order Tracking Modal */}
       {trackingOrderId && (
         <OrderTrackingModal
           orderId={trackingOrderId}
@@ -265,8 +235,8 @@ function iconFor(name) {
     Home: "⌂",
     Shop: "🛍️",
     Rent: "🗓️",
-    Upcycle: "✂️",
-    Recycle: "♻️",
+    "Upcycle Studio": "✂️",
+    "Recycle Network": "♻️",
     Cart: "🛒",
     Upload: "📷",
     Dashboard: "▤",
@@ -281,34 +251,29 @@ function Home({ setPage, onOpenDetail }) {
     <div className="page-home-clean">
       <section className="hero-clean">
         <div className="hero-text-block">
-          <span className="label-accent">♻️ CIRCULAR FASHION PLATFORM</span>
+          <span className="label-accent">♻️ WEARVERSE PLATFORM</span>
           <h1>
-            Fashion that
+            Give your clothes
             <br />
-            <em className="hero-highlight">lives again.</em>
+            <em className="hero-highlight">a Second life.</em>
           </h1>
           <p>
-            Buy, sell, rent, upcycle, and recycle quality clothing. Backed by AI condition grading, 1,000+ demo items, 30 verified sellers, and Virtual Try-On.
+            Buy, sell, rent, upcycle with tailors, and recycle to farmers. Backed by 10,000 verified marketplace items, AI condition scanning, and Virtual Try-On.
           </p>
 
           <div className="hero-buttons">
             <button className="primary" onClick={() => setPage("Shop")}>
-              Explore 1,000+ Catalog →
+              Explore 10,000+ Catalog →
             </button>
             <button className="secondary" onClick={() => setPage("Rent")}>
               🗓️ Browse Rental Wardrobe
             </button>
-            <button className="secondary" onClick={() => setPage("Upload")}>
-              📷 Sell Your Clothes
-            </button>
           </div>
         </div>
-
-        {/* Removed top right hero-art graphic image as requested */}
       </section>
 
       {/* Featured Items Grid */}
-      <div className="home-featured-section">
+      <div className="home-featured-section" style={{ marginTop: "40px" }}>
         <h2>🔥 Featured Marketplace Listings</h2>
         <div className="products">
           {featured.map((item) => (
@@ -337,6 +302,88 @@ function Home({ setPage, onOpenDetail }) {
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileEditModal({ onClose }) {
+  const { role, activeSeller } = useStore();
+  const [profile, setProfile] = useState({
+    name: role === "seller" ? activeSeller.name : "Sruthi R.",
+    email: "sruthi.wearverse@gmail.com",
+    phone: "+91 98765 43210",
+    location: role === "seller" ? activeSeller.location : "Mumbai, Maharashtra",
+    bio: role === "seller" ? activeSeller.bio : "Passionate about sustainable circular fashion and giving clothes a second life.",
+  });
+  const [saved, setSaved] = useState(false);
+
+  function handleSave(e) {
+    e.preventDefault();
+    setSaved(true);
+    setTimeout(() => {
+      onClose();
+    }, 1200);
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="checkout-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "520px", background: "white", padding: "28px", borderRadius: "20px" }}>
+        <button className="modal-close-btn" onClick={onClose}>×</button>
+        <span className="label">USER PROFILE & DETAILS</span>
+        <h2 style={{ margin: "4px 0 16px" }}>{role === "seller" ? "Seller Profile Details" : "Buyer Profile Details"}</h2>
+
+        {saved ? (
+          <div style={{ background: "#edf4ef", color: "#174d39", padding: "20px", borderRadius: "12px", textAlign: "center", fontWeight: "bold" }}>
+            ✓ Profile details updated successfully!
+          </div>
+        ) : (
+          <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <label style={{ fontSize: "12px", fontWeight: "bold" }}>
+              Full Name
+              <input
+                type="text"
+                value={profile.name}
+                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ccc", marginTop: "4px" }}
+              />
+            </label>
+
+            <label style={{ fontSize: "12px", fontWeight: "bold" }}>
+              Email Address
+              <input
+                type="email"
+                value={profile.email}
+                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ccc", marginTop: "4px" }}
+              />
+            </label>
+
+            <label style={{ fontSize: "12px", fontWeight: "bold" }}>
+              Phone Number
+              <input
+                type="text"
+                value={profile.phone}
+                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ccc", marginTop: "4px" }}
+              />
+            </label>
+
+            <label style={{ fontSize: "12px", fontWeight: "bold" }}>
+              City & Location
+              <input
+                type="text"
+                value={profile.location}
+                onChange={(e) => setProfile({ ...profile, location: e.target.value })}
+                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ccc", marginTop: "4px" }}
+              />
+            </label>
+
+            <button type="submit" className="primary" style={{ padding: "12px", marginTop: "8px" }}>
+              Save Profile Changes →
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

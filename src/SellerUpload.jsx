@@ -1,8 +1,8 @@
 // src/SellerUpload.jsx
 import { useRef, useState } from "react";
-import { useStore } from "./StoreContext";
-import { BRANDS, CATEGORIES, COLORS, SIZES, SUBCATEGORIES } from "./mockDataGenerator";
 import { classifyCondition, isClothing, loadAI } from "./aiClassifier";
+import { useStore } from "./StoreContext";
+import { CATEGORIES, SUBCATEGORIES } from "./mockDataGenerator";
 
 const MAX_PHOTOS = 4;
 
@@ -13,7 +13,7 @@ export default function SellerUpload({ setPage }) {
   const cameraRef = useRef(null);
 
   const [photos, setPhotos] = useState([]);
-  const [aiStatus, setAiStatus] = useState("Loading AI classifier model...");
+  const [aiStatus, setAiStatus] = useState("AI classifier ready...");
   const [checking, setChecking] = useState(false);
   const [rejectMsg, setRejectMsg] = useState("");
 
@@ -27,23 +27,23 @@ export default function SellerUpload({ setPage }) {
     subcategory: "Summer Frock",
     size: "M",
     color: "Pink",
-    brand: "Zara",
     material: "Cotton",
-    mode: "shop", // 'shop' | 'rent' | 'both'
+    mode: "shop",
     price: "899",
     rentalPrice: "149",
+    deposit: "200",
     description: "",
   });
 
   async function ensureAI() {
-    setAiStatus("Loading AI model...");
+    setAiStatus("Loading zero-shot AI classifier...");
     await loadAI(setAiStatus);
-    setAiStatus("AI ready — clothing detection & damage grading available.");
+    setAiStatus("AI classifier ready for clothing detection.");
   }
 
-  async function handleFiles(event) {
-    const files = Array.from(event.target.files || []);
-    event.target.value = "";
+  async function handleFiles(e) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
     if (!files.length) return;
 
     const remaining = MAX_PHOTOS - photos.length;
@@ -57,15 +57,12 @@ export default function SellerUpload({ setPage }) {
       try {
         const ok = await isClothing(file);
         if (!ok) {
-          setRejectMsg(
-            `"${file.name}" doesn't look like a clothing photo and was skipped. Please upload clear clothing images.`
-          );
+          setRejectMsg(`"${file.name}" doesn't look like a clothing photo and was skipped.`);
           continue;
         }
         setPhotos((prev) => [...prev, { file, url: URL.createObjectURL(file) }]);
       } catch (err) {
         console.error(err);
-        // Fallback if local WebGL fails
         setPhotos((prev) => [...prev, { file, url: URL.createObjectURL(file) }]);
       }
     }
@@ -73,11 +70,11 @@ export default function SellerUpload({ setPage }) {
     setChecking(false);
   }
 
-  function removePhoto(index) {
+  function removePhoto(idx) {
     setPhotos((prev) => {
       const copy = [...prev];
-      if (copy[index]?.url) URL.revokeObjectURL(copy[index].url);
-      copy.splice(index, 1);
+      if (copy[idx]?.url) URL.revokeObjectURL(copy[idx].url);
+      copy.splice(idx, 1);
       return copy;
     });
   }
@@ -95,18 +92,11 @@ export default function SellerUpload({ setPage }) {
       const result = await classifyCondition(photos[0].file);
       setAnalysis(result);
 
-      // Auto-suggest title & pricing based on category
-      const suggestedPrice = 850;
-      const suggestedRental = 139;
-
       setItem((prev) => ({
         ...prev,
-        title: `${prev.color} ${prev.material} ${prev.category.replace(/s$/, "")}`,
-        price: String(suggestedPrice),
-        rentalPrice: String(suggestedRental),
+        title: `${prev.color} ${prev.material} ${prev.subcategory}`,
       }));
 
-      // Severely damaged -> auto-route to Recycle
       if (result.condition === "Severely Damaged") {
         createRecycleRequest({
           title: `${item.category} (AI Auto-Routed)`,
@@ -117,14 +107,13 @@ export default function SellerUpload({ setPage }) {
       }
     } catch (err) {
       console.error(err);
-      const fallbackResult = { condition: "Good", confidence: 90 };
-      setAnalysis(fallbackResult);
+      setAnalysis({ condition: "Good", confidence: 90 });
     }
   }
 
   function confirmListing() {
     if (!item.title || !item.price) {
-      alert("Please enter the item title and pricing.");
+      alert("Please fill in the product title and pricing.");
       return;
     }
 
@@ -134,7 +123,6 @@ export default function SellerUpload({ setPage }) {
       subcategory: item.subcategory,
       size: item.size,
       color: item.color,
-      brand: item.brand,
       material: item.material,
       condition: analysis?.condition || "Good",
       type: item.mode,
@@ -148,42 +136,27 @@ export default function SellerUpload({ setPage }) {
     setStep("success");
   }
 
-  function resetAll() {
-    photos.forEach((p) => p.url && URL.revokeObjectURL(p.url));
-    setPhotos([]);
-    setAnalysis(null);
-    setStep("upload");
-    setRejectMsg("");
-    setPublishedItem(null);
-  }
-
   // SUCCESS STATE
   if (step === "success" && publishedItem) {
     return (
       <div className="page">
-        <div className="feature">
+        <div className="feature text-center">
           <div className="big-icon">🚀</div>
-          <span className="sell-label">LISTING PUBLISHED LIVE</span>
+          <span className="label">LISTING PUBLISHED LIVE</span>
           <h1>Your Item is Now Live on WearVerse!</h1>
           <p>Buyers can now search, rent, or purchase <strong>"{publishedItem.title}"</strong> in the marketplace.</p>
 
-          <div className="published-preview-card">
-            <img src={publishedItem.image} alt={publishedItem.title} />
-            <div>
-              <h3>{publishedItem.title}</h3>
-              <p>Category: {publishedItem.category} · Condition: {publishedItem.condition}</p>
-              <div className="price-row">
-                <b>₹{publishedItem.price}</b>
-                {publishedItem.rentalPrice && <span>(or ₹{publishedItem.rentalPrice}/day rent)</span>}
-              </div>
-            </div>
+          <div style={{ background: "white", padding: "20px", borderRadius: "16px", border: "1px solid #e1ebe4", maxWidth: "400px", margin: "20px auto" }}>
+            <img src={publishedItem.image} alt={publishedItem.title} style={{ width: "100%", height: "200px", objectFit: "cover", borderRadius: "12px" }} />
+            <h3 style={{ margin: "12px 0 4px" }}>{publishedItem.title}</h3>
+            <b>₹{publishedItem.price}</b>
           </div>
 
-          <div className="success-actions-row">
-            <button className="sell-primary" onClick={() => setPage("Shop")}>
+          <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginTop: "24px" }}>
+            <button className="primary" onClick={() => setPage("Shop")}>
               View in Marketplace Shop →
             </button>
-            <button className="sell-secondary" onClick={resetAll}>
+            <button className="secondary" onClick={() => setStep("upload")}>
               + Upload Another Item
             </button>
           </div>
@@ -192,59 +165,79 @@ export default function SellerUpload({ setPage }) {
     );
   }
 
-  // ANALYSIS STATE
+  // ANALYSIS RESULT STATE
   if (step === "analysis") {
     return (
       <div className="page">
-        <div className="feature">
+        <div className="feature" style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
           <div className="big-icon">🤖</div>
-          <span className="sell-label">AI INSPECTION RESULT</span>
-          <h1>AI Clothing Condition Analysis</h1>
+          <span className="label">AI GARMENT SCANNING & DETECTION</span>
+          <h1 style={{ margin: "8px 0 16px" }}>AI Condition Inspection Result</h1>
 
           {!analysis ? (
-            <div className="analysis-loading">
-              <div className="loader" />
-              <h3>Analyzing garment condition & quality score...</h3>
+            <div style={{ padding: "40px" }}>
+              <h3>Analyzing garment condition & scanning for damage...</h3>
             </div>
           ) : (
             <>
-              <div className="analysis-photo-grid">
+              <div style={{ display: "flex", justifyContent: "center", gap: "12px", marginBottom: "20px" }}>
                 {photos.map((p, i) => (
-                  <img key={i} src={p.url} alt={`Upload ${i + 1}`} />
+                  <img key={i} src={p.url} alt={`Scan ${i + 1}`} style={{ width: "120px", height: "120px", objectFit: "cover", borderRadius: "12px" }} />
                 ))}
               </div>
 
-              <div className="condition-result-badge">
-                <h2>
-                  {analysis.condition === "Good" && "🟢 Good Condition"}
-                  {analysis.condition === "Slightly Damaged" && "🟠 Slightly Damaged"}
-                  {analysis.condition === "Severely Damaged" && "🔴 Severely Damaged"}
+              <div style={{ background: "#edf4ef", padding: "20px", borderRadius: "16px", marginBottom: "24px" }}>
+                <h2 style={{ margin: "0 0 6px", color: "#174d39" }}>
+                  {analysis.condition === "Good" && "🟢 Good / Like New Condition"}
+                  {analysis.condition === "Slightly Damaged" && "🟠 Slightly Damaged / Torn"}
+                  {analysis.condition === "Severely Damaged" && "🔴 Severely Damaged / Unwearable"}
                 </h2>
-                <p>AI Confidence: <strong>{analysis.confidence?.toFixed(0) || 90}%</strong></p>
+                <p style={{ margin: 0, fontSize: "13px", color: "#555" }}>
+                  AI Confidence: <strong>{analysis.confidence?.toFixed(0) || 90}%</strong>
+                </p>
               </div>
 
-              {analysis.condition === "Severely Damaged" ? (
-                <div className="recommendation recycle">
-                  <strong>Auto-Routed to Circular Recycle Queue</strong>
-                  <p>This item is too damaged for resale or rental. It's been automatically scheduled for donation or agricultural reuse — no pricing needed.</p>
-                  <button className="sell-primary" onClick={() => setPage("Recycle")}>
-                    View in Recycle Queue →
+              {/* SLIGHTLY DAMAGED -> ROUTE TO UPCYCLE */}
+              {analysis.condition === "Slightly Damaged" && (
+                <div style={{ background: "#fffaf0", border: "1px solid #fbd38d", padding: "20px", borderRadius: "16px", marginBottom: "24px", textAlign: "left" }}>
+                  <h3 style={{ margin: "0 0 6px", color: "#975a16" }}>✂️ Auto-Routed to Upcycle (Nearest Tailors)</h3>
+                  <p style={{ fontSize: "13px", color: "#666", marginBottom: "12px" }}>
+                    This garment has slight tears or wear. AI recommends sending it to a nearby local tailor for upcycling or alteration.
+                  </p>
+                  <button className="primary" onClick={() => setPage("Upcycle")}>
+                    Connect with Nearest Tailors (Upcycle) →
                   </button>
                 </div>
-              ) : (
-                <>
-                  <div className="recommendation good">
-                    <strong>Approved for Resale & Rental Marketplace!</strong>
-                    <p>Item quality verified. Set your listing details, size, and selling/rental rates below.</p>
-                  </div>
-                  <button className="sell-primary" onClick={() => setStep("listing")}>
-                    Continue to Pricing & Listing →
-                  </button>
-                </>
               )}
 
-              <button className="sell-secondary" onClick={() => setStep("upload")}>
-                ← Upload Different Photos
+              {/* SEVERELY DAMAGED -> ROUTE TO RECYCLE */}
+              {analysis.condition === "Severely Damaged" && (
+                <div style={{ background: "#fff5f5", border: "1px solid #feb2b2", padding: "20px", borderRadius: "16px", marginBottom: "24px", textAlign: "left" }}>
+                  <h3 style={{ margin: "0 0 6px", color: "#c53030" }}>♻️ Auto-Routed to Recycle (Donation & Farmers)</h3>
+                  <p style={{ fontSize: "13px", color: "#666", marginBottom: "12px" }}>
+                    This item is unwearable. AI recommends routing to donation drives or agricultural farmers for crop protection and soil mulch.
+                  </p>
+                  <button className="primary" onClick={() => setPage("Recycle")}>
+                    Connect with Farmers & Donation NGOs →
+                  </button>
+                </div>
+              )}
+
+              {/* GOOD / LIKE NEW -> RESALE & RENTAL MARKETPLACE */}
+              {analysis.condition === "Good" && (
+                <div style={{ background: "#edf4ef", padding: "20px", borderRadius: "16px", marginBottom: "24px" }}>
+                  <strong style={{ color: "#174d39", fontSize: "16px" }}>Approved for Resale & Rental Marketplace!</strong>
+                  <p style={{ margin: "6px 0 16px", fontSize: "13px", color: "#555" }}>
+                    Set your selling price or rental rate to publish live.
+                  </p>
+                  <button className="primary" onClick={() => setStep("listing")}>
+                    Continue to Price Decision & Listing →
+                  </button>
+                </div>
+              )}
+
+              <button className="secondary" onClick={() => setStep("upload")} style={{ marginTop: "12px" }}>
+                ← Upload Different Photo
               </button>
             </>
           )}
@@ -257,140 +250,70 @@ export default function SellerUpload({ setPage }) {
   if (step === "listing") {
     return (
       <div className="page">
-        <div className="listing-card">
-          <div className="card-heading">
-            <div>
-              <span className="mini-label">STEP 02</span>
-              <h2>Set Listing Details & Pricing</h2>
-            </div>
-          </div>
+        <div style={{ background: "white", padding: "32px", borderRadius: "20px", border: "1px solid #e1ebe4", maxWidth: "680px", margin: "0 auto" }}>
+          <h2>Seller Price Decision</h2>
 
-          <div className="form-row-2">
-            <label>
-              Category
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>Category</label>
               <select
                 value={item.category}
                 onChange={(e) => setItem({ ...item, category: e.target.value, subcategory: SUBCATEGORIES[e.target.value]?.[0] || e.target.value })}
+                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
               >
                 {CATEGORIES.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
               </select>
-            </label>
+            </div>
 
-            <label>
-              Subcategory
+            <div>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>Subcategory</label>
               <select
                 value={item.subcategory}
                 onChange={(e) => setItem({ ...item, subcategory: e.target.value })}
+                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
               >
                 {(SUBCATEGORIES[item.category] || [item.category]).map((sc) => (
                   <option key={sc}>{sc}</option>
                 ))}
               </select>
-            </label>
-          </div>
-
-          <label>
-            Listing Title
-            <input
-              type="text"
-              required
-              value={item.title}
-              onChange={(e) => setItem({ ...item, title: e.target.value })}
-              placeholder="e.g. Floral Cotton Summer Frock"
-            />
-          </label>
-
-          <div className="form-row-3">
-            <label>
-              Size
-              <select value={item.size} onChange={(e) => setItem({ ...item, size: e.target.value })}>
-                {SIZES.map((s) => (
-                  <option key={s}>{s}</option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              Color
-              <select value={item.color} onChange={(e) => setItem({ ...item, color: e.target.value })}>
-                {COLORS.map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              Brand
-              <select value={item.brand} onChange={(e) => setItem({ ...item, brand: e.target.value })}>
-                {BRANDS.map((b) => (
-                  <option key={b}>{b}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          {/* Mode Selection */}
-          <div className="mode-toggle-group">
-            <label>Availability Mode:</label>
-            <div className="chip-row">
-              <button
-                type="button"
-                className={`chip ${item.mode === "shop" ? "active" : ""}`}
-                onClick={() => setItem({ ...item, mode: "shop" })}
-              >
-                🛍️ Buy Only (Resale)
-              </button>
-              <button
-                type="button"
-                className={`chip ${item.mode === "rent" ? "active" : ""}`}
-                onClick={() => setItem({ ...item, mode: "rent" })}
-              >
-                🗓️ Rent Only
-              </button>
-              <button
-                type="button"
-                className={`chip ${item.mode === "both" ? "active" : ""}`}
-                onClick={() => setItem({ ...item, mode: "both" })}
-              >
-                ✨ Both (Buy & Rent)
-              </button>
             </div>
           </div>
 
-          {/* Pricing Fields */}
-          <div className="form-row-2">
-            {item.mode !== "rent" && (
-              <label>
-                Resale Price (₹)
-                <input
-                  type="number"
-                  required
-                  value={item.price}
-                  onChange={(e) => setItem({ ...item, price: e.target.value })}
-                />
-              </label>
-            )}
+          <label style={{ display: "block", fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>Listing Title</label>
+          <input
+            type="text"
+            required
+            value={item.title}
+            onChange={(e) => setItem({ ...item, title: e.target.value })}
+            style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ccc", marginBottom: "16px" }}
+          />
 
-            {item.mode !== "shop" && (
-              <label>
-                Rental Rate (₹ per day)
-                <input
-                  type="number"
-                  required
-                  value={item.rentalPrice}
-                  onChange={(e) => setItem({ ...item, rentalPrice: e.target.value })}
-                />
-              </label>
-            )}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>Selling Price (₹)</label>
+              <input
+                type="number"
+                value={item.price}
+                onChange={(e) => setItem({ ...item, price: e.target.value })}
+                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: "bold", marginBottom: "6px" }}>Rental Rate (₹/day)</label>
+              <input
+                type="number"
+                value={item.rentalPrice}
+                onChange={(e) => setItem({ ...item, rentalPrice: e.target.value })}
+                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+              />
+            </div>
           </div>
 
-          <button className="sell-primary full-width" onClick={confirmListing}>
-            🚀 Publish Listing Live →
-          </button>
-          <button className="sell-secondary full-width" onClick={() => setStep("analysis")}>
-            ← Back to AI Analysis
+          <button className="primary" style={{ width: "100%", padding: "14px" }} onClick={confirmListing}>
+            🚀 PUBLISH LISTING LIVE →
           </button>
         </div>
       </div>
@@ -400,63 +323,49 @@ export default function SellerUpload({ setPage }) {
   // DEFAULT UPLOAD STEP
   return (
     <div className="page">
-      <div className="sell-header">
-        <div>
-          <span className="sell-label">SELLER UPLOADER</span>
-          <h1>Give Clothes Another Life</h1>
-          <p>Upload photos — AI verifies it's clothing, grades condition, and publishes it live for sale or rent.</p>
-        </div>
-        <div className="sell-header-icon">📷</div>
+      <div className="page-heading">
+        <span className="label">SELLER PRODUCT UPLOADER</span>
+        <h1>Upload Clothes for AI Scanning</h1>
+        <p>Upload photos — AI scans the garment, detects condition (Good, Slightly Damaged, Severely Damaged), and routes it appropriately.</p>
       </div>
 
-      <div className="upload-card">
-        <div className="card-heading">
-          <div>
-            <span className="mini-label">STEP 01</span>
-            <h2>Upload Garment Photos</h2>
-          </div>
-          <span className="photo-count">{photos.length}/{MAX_PHOTOS}</span>
+      <div style={{ background: "white", padding: "36px", borderRadius: "20px", border: "1px solid #e1ebe4", maxWidth: "680px", margin: "0 auto", textAlign: "center" }}>
+        <div style={{ fontSize: "48px", marginBottom: "12px" }}>📷</div>
+        <h2 style={{ margin: "0 0 8px" }}>Select or Capture Garment Photos</h2>
+        <p style={{ color: "#666", marginBottom: "20px", fontSize: "13px" }}>{checking ? "Scanning photo with AI..." : aiStatus}</p>
+
+        <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginBottom: "24px" }}>
+          <button className="primary" onClick={() => uploadRef.current?.click()}>
+            🖼️ Select Photo
+          </button>
+          <button className="secondary" onClick={() => cameraRef.current?.click()}>
+            📷 Use Camera
+          </button>
         </div>
 
-        <div className="ai-status-bar">{checking ? "Checking image..." : aiStatus}</div>
+        <input ref={uploadRef} type="file" accept="image/*" multiple hidden onChange={handleFiles} />
+        <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={handleFiles} />
 
-        <div className="upload-area">
-          <div className="upload-icon">📷</div>
-          <h3>Drag or Select Clothing Photos</h3>
-          <p>Up to 4 clear photos showing front, back, or label.</p>
-
-          <div className="upload-buttons">
-            <button className="sell-primary" onClick={() => uploadRef.current?.click()}>
-              🖼️ Select Photos
-            </button>
-            <button className="sell-secondary" onClick={() => cameraRef.current?.click()}>
-              📷 Use Camera
-            </button>
-          </div>
-
-          <input ref={uploadRef} type="file" accept="image/*" multiple hidden onChange={handleFiles} />
-          <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={handleFiles} />
-        </div>
-
-        {rejectMsg && <div className="modal-error">{rejectMsg}</div>}
+        {rejectMsg && <div style={{ color: "#c53030", marginBottom: "16px", fontSize: "12px" }}>{rejectMsg}</div>}
 
         {photos.length > 0 && (
-          <div className="photo-gallery">
+          <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginBottom: "24px" }}>
             {photos.map((p, i) => (
-              <div className="uploaded-photo" key={i}>
-                <img src={p.url} alt={`Upload ${i + 1}`} />
-                <button onClick={() => removePhoto(i)} aria-label="Remove photo">×</button>
+              <div key={i} style={{ position: "relative" }}>
+                <img src={p.url} alt={`Upload ${i + 1}`} style={{ width: "90px", height: "90px", objectFit: "cover", borderRadius: "10px" }} />
+                <button onClick={() => removePhoto(i)} style={{ position: "absolute", top: "-6px", right: "-6px", background: "#e53e3e", color: "white", border: "none", borderRadius: "50%", width: "22px", height: "22px", cursor: "pointer" }}>×</button>
               </div>
             ))}
           </div>
         )}
 
         <button
-          className="sell-primary full-width"
+          className="primary"
+          style={{ width: "100%", padding: "14px" }}
           disabled={photos.length === 0 || checking}
           onClick={runAIAnalysis}
         >
-          🤖 Analyze Clothing & Continue →
+          🤖 SCAN GARMENT & CONDITION ROUTE →
         </button>
       </div>
     </div>
