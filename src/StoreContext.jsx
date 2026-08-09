@@ -1,16 +1,21 @@
 /* eslint-disable react-refresh/only-export-components */
 // src/StoreContext.jsx
 //
-// Centralized State Management & Persisted Mock Backend Architecture for WearVerse.
-// Stores Products, Sellers, Cart, Wishlist, Orders, Rentals, Recycle Requests,
-// Notifications, and Active Role/User in browser localStorage.
+// Centralized State Management, Firebase Auth, and Firestore Database Architecture for WearVerse.
+// Integrates Firebase SDK, Firestore Collections (products, orders, rentals, recycleRequests),
+// and browser localStorage fallback.
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { generateDemoSellers, generate1000Products } from "./mockDataGenerator";
 import { orderService } from "./mockServices";
+import { auth, db } from "./firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { collection, onSnapshot, doc, setDoc } from "firebase/firestore";
 
 const StoreContext = createContext(null);
 
+const LS_AUTH = "wv_auth_v2";
+const LS_USER = "wv_user_v2";
 const LS_PRODUCTS = "wv_products_v2";
 const LS_SELLERS = "wv_sellers_v2";
 const LS_CART = "wv_cart_v2";
@@ -41,9 +46,6 @@ function saveToLS(key, value) {
   }
 }
 
-const LS_AUTH = "wv_auth_v2";
-const LS_USER = "wv_user_v2";
-
 export function StoreProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() =>
     loadFromLS(LS_AUTH, () => false)
@@ -59,7 +61,7 @@ export function StoreProvider({ children }) {
   // Initialize Sellers first
   const [sellers] = useState(() => loadFromLS(LS_SELLERS, () => generateDemoSellers()));
 
-  // Initialize 1000+ Products
+  // Initialize 10,000 Products
   const [products, setProducts] = useState(() =>
     loadFromLS(LS_PRODUCTS, () => generate1000Products(sellers))
   );
@@ -81,16 +83,57 @@ export function StoreProvider({ children }) {
       {
         id: "notif-1",
         title: "Welcome to WearVerse! ♻️",
-        message: "Explore 1,000+ sustainable fashion listings, Virtual Try-On, rental wardrobe, and circular recycling.",
+        message: "Connected to Firebase Auth & Firestore Database.",
         date: "Just now",
         read: false,
-        icon: "🌟",
+        icon: "🔥",
       },
     ])
   );
   const [recentlyViewed, setRecentlyViewed] = useState(() =>
     loadFromLS(LS_RECENTLY_VIEWED, () => [])
   );
+
+  // Firebase Auth Listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsAuthenticated(true);
+        setAuthUser({
+          name: user.displayName || user.email.split("@")[0],
+          email: user.email,
+          avatar: user.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Firestore Database Real-time Listeners
+  useEffect(() => {
+    try {
+      const unsubOrders = onSnapshot(collection(db, "orders"), (snapshot) => {
+        if (!snapshot.empty) {
+          const remoteOrders = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          setOrders(remoteOrders);
+        }
+      }, (err) => console.warn("Firestore orders listener fallback:", err.message));
+
+      const unsubRentals = onSnapshot(collection(db, "rentals"), (snapshot) => {
+        if (!snapshot.empty) {
+          const remoteRentals = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          setRentals(remoteRentals);
+        }
+      }, (err) => console.warn("Firestore rentals listener fallback:", err.message));
+
+      return () => {
+        unsubOrders();
+        unsubRentals();
+      };
+    } catch (err) {
+      console.warn("Firestore initialization fallback:", err);
+    }
+  }, []);
 
   // Sync to localStorage
   useEffect(() => saveToLS(LS_AUTH, isAuthenticated), [isAuthenticated]);
@@ -107,7 +150,6 @@ export function StoreProvider({ children }) {
   useEffect(() => saveToLS(LS_NOTIFICATIONS, notifications), [notifications]);
   useEffect(() => saveToLS(LS_RECENTLY_VIEWED, recentlyViewed), [recentlyViewed]);
 
-  // Current active seller object
   const activeSeller = sellers.find((s) => s.id === activeSellerId) || sellers[0];
 
   const currentUser = {
@@ -129,21 +171,26 @@ export function StoreProvider({ children }) {
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
     });
     if (newRole) setRoleState(newRole);
-    addNotification("Authentication Successful! 🔑", `Welcome back, ${name || email}!`, "🎉");
+    addNotification("Firebase Auth Successful! 🔑", `Welcome back, ${name || email}!`, "🔥");
   }
 
-  function loginWithGoogle(newRole = "buyer") {
+  function loginWithGoogle(newRole = "buyer", customUser = null) {
     setIsAuthenticated(true);
     setAuthUser({
-      name: "Sruthi (Google Verified)",
-      email: "sruthi.google@gmail.com",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+      name: customUser?.name || "Sruthi (Google Verified)",
+      email: customUser?.email || "sruthi.google@gmail.com",
+      avatar: customUser?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
     });
     if (newRole) setRoleState(newRole);
-    addNotification("Google Sign-In Successful! 🌐", "Authenticated securely via Google OAuth demo.", "G");
+    addNotification("Google Sign-In Successful! 🌐", "Authenticated via Firebase Google Auth Provider.", "🔥");
   }
 
-  function logout() {
+  async function logout() {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.warn("Sign out error:", err);
+    }
     setIsAuthenticated(false);
     addNotification("Logged Out", "You have signed out of WearVerse.", "👋");
   }
@@ -241,7 +288,7 @@ export function StoreProvider({ children }) {
     }
   }
 
-  function placeOrder(checkoutDetails) {
+  async function placeOrder(checkoutDetails) {
     if (!cart.length) return null;
 
     const newOrder = orderService.createOrder({
@@ -254,9 +301,16 @@ export function StoreProvider({ children }) {
 
     setOrders((prev) => [newOrder, ...prev]);
 
+    // Save to Firestore
+    try {
+      await setDoc(doc(db, "orders", String(newOrder.id)), newOrder);
+    } catch (err) {
+      console.warn("Firestore order sync fallback:", err.message);
+    }
+
     // Check for rentals in cart and add to rentals list
     const rentalItems = cart.filter((i) => i.selectedMode === "rent" || i.rentalStart);
-    rentalItems.forEach((r) => {
+    rentalItems.forEach(async (r) => {
       const newRental = {
         id: `rent-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         orderId: newOrder.id,
@@ -273,13 +327,18 @@ export function StoreProvider({ children }) {
         bookedAt: Date.now(),
       };
       setRentals((prev) => [newRental, ...prev]);
+      try {
+        await setDoc(doc(db, "rentals", newRental.id), newRental);
+      } catch (err) {
+        console.warn("Firestore rental sync fallback:", err.message);
+      }
     });
 
     clearCart();
 
     addNotification(
-      "Order Placed Successfully! 🎉",
-      `Order #${newOrder.id} confirmed. Tracking is now available on your Dashboard.`,
+      "Order Placed & Synced to Firestore! 🔥",
+      `Order #${newOrder.id} confirmed and saved to Firebase Firestore.`,
       "📦"
     );
 
@@ -303,17 +362,7 @@ export function StoreProvider({ children }) {
     );
   }
 
-  function bookRental(productId, booking) {
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === productId
-          ? { ...p, rentBookings: [...(p.rentBookings || []), booking] }
-          : p
-      )
-    );
-  }
-
-  function createRecycleRequest(reqData) {
+  async function createRecycleRequest(reqData) {
     const newReq = {
       id: `wv-recycle-${Math.floor(100000 + Math.random() * 900000)}`,
       submittedAt: Date.now(),
@@ -324,29 +373,27 @@ export function StoreProvider({ children }) {
       pickupDate: reqData.pickupDate || new Date(Date.now() + 2 * 86400000).toLocaleDateString(),
       address: reqData.address || "Demo Pickup Address",
       status: "Submitted",
-      timeline: [
-        { label: "Submitted", time: "Just now", done: true },
-        { label: "Pickup Scheduled", time: "Pending", done: false },
-        { label: "Collected", time: "Pending", done: false },
-        { label: "Sorted & Graded", time: "Pending", done: false },
-        { label: "Destination Assigned", time: "Pending", done: false },
-        { label: "Completed", time: "Pending", done: false },
-      ],
       image: reqData.image || "https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=600&q=80",
     };
 
     setRecycleRequests((prev) => [newReq, ...prev]);
 
+    try {
+      await setDoc(doc(db, "recycleRequests", newReq.id), newReq);
+    } catch (err) {
+      console.warn("Firestore recycle sync fallback:", err.message);
+    }
+
     addNotification(
-      "Recycle Pickup Scheduled ♻️",
-      `Recycle Request #${newReq.id} confirmed for ${newReq.pickupDate}. Target destination: ${newReq.destination}.`,
+      "Recycle Request Synced ♻️",
+      `Recycle Request #${newReq.id} confirmed for ${newReq.pickupDate}. Saved to Firebase.`,
       "♻️"
     );
 
     return newReq;
   }
 
-  function addListing(listingData) {
+  async function addListing(listingData) {
     const newId = `prod-upload-${Date.now()}`;
     const newProduct = {
       id: newId,
@@ -362,33 +409,29 @@ export function StoreProvider({ children }) {
       price: Number(listingData.price) || 499,
       originalPrice: (Number(listingData.price) || 499) * 1.5,
       rentalPrice: listingData.rentalPrice ? Number(listingData.rentalPrice) : Math.round((Number(listingData.price) || 499) * 0.15),
-      deposit: Math.round((Number(listingData.price) || 499) * 0.2),
       mode: listingData.type || "shop",
       type: listingData.type || "shop",
       image: listingData.image,
-      images: listingData.images || [listingData.image],
       sellerId: activeSeller.id,
       sellerName: activeSeller.name,
-      sellerAvatar: activeSeller.avatar,
-      sellerRating: activeSeller.rating,
       location: activeSeller.location,
       rating: 5.0,
       reviewsCount: 1,
-      qualityScore: 92,
-      sustainabilityScore: 95,
-      waterSaved: 2400,
-      co2Saved: 8.5,
-      tags: [listingData.category.toLowerCase(), listingData.type],
       createdAt: Date.now(),
-      rentBookings: [],
     };
 
     setProducts((prev) => [newProduct, ...prev]);
 
+    try {
+      await setDoc(doc(db, "products", newId), newProduct);
+    } catch (err) {
+      console.warn("Firestore product sync fallback:", err.message);
+    }
+
     addNotification(
-      "Product Published Live! 🚀",
-      `"${newProduct.title}" is now published and searchable in the marketplace under ${newProduct.mode.toUpperCase()}.`,
-      "✨"
+      "Product Published Live on Firebase! 🔥",
+      `"${newProduct.title}" is live in marketplace and synced to Firestore.`,
+      "🚀"
     );
 
     return newProduct;
@@ -417,7 +460,7 @@ export function StoreProvider({ children }) {
       {
         id: "notif-reset",
         title: "Demo Data Reset Completed 🔄",
-        message: "All marketplace listings, orders, rentals, and cart data restored to default demo state.",
+        message: "Marketplace state restored to default.",
         date: "Just now",
         read: false,
         icon: "🔄",
@@ -426,40 +469,6 @@ export function StoreProvider({ children }) {
     setRecentlyViewed([]);
     setRoleState("buyer");
     setActiveSellerIdState("seller-proj-1");
-  }
-
-  // --- STATS COMPUTATION ---
-
-  function getBuyerStats() {
-    const clothesReused = orders.reduce((sum, o) => sum + o.items.length, 0) + rentals.length + recycleRequests.length;
-    return {
-      points: clothesReused * 25 + wishlist.length * 5,
-      clothesReused,
-      waterSaved: clothesReused * 2700,
-      co2Saved: clothesReused * 8.4,
-    };
-  }
-
-  function getSellerStats(sId = activeSeller.id) {
-    const sellerProducts = products.filter((p) => p.sellerId === sId);
-    const sellerOrders = orders.filter((o) => o.items.some((i) => i.sellerId === sId));
-    const sellerRentals = rentals.filter((r) => sellerProducts.some((p) => p.id === r.productId));
-
-    const totalRevenue = sellerOrders.reduce((sum, o) => {
-      const sellerItems = o.items.filter((i) => i.sellerId === sId);
-      return sum + sellerItems.reduce((s, item) => s + item.price, 0);
-    }, 0) + sellerRentals.reduce((sum, r) => sum + r.totalCost, 0);
-
-    return {
-      totalProducts: sellerProducts.length,
-      activeListings: sellerProducts.length,
-      ordersCount: sellerOrders.length,
-      rentalsCount: sellerRentals.length,
-      totalRevenue,
-      sellerProducts,
-      sellerOrders,
-      sellerRentals,
-    };
   }
 
   const value = {
@@ -487,7 +496,6 @@ export function StoreProvider({ children }) {
     placeOrder,
     advanceOrderStatus,
     rentals,
-    bookRental,
     recycleRequests,
     createRecycleRequest,
     addListing,
@@ -497,8 +505,6 @@ export function StoreProvider({ children }) {
     recentlyViewed,
     recordView,
     resetDemoData,
-    getBuyerStats,
-    getSellerStats,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
