@@ -175,7 +175,10 @@ export default function CheckoutModal({ onClose, onOrderPlaced }) {
                   checked={paymentMethod === "upi"}
                   onChange={() => setPaymentMethod("upi")}
                 />
-                <span>📱 UPI / GooglePay / PhonePe</span>
+                <div>
+                  <strong>📱 UPI Payment (PhonePe / GPay / Paytm / Razorpay)</strong>
+                  <small style={{ display: "block", color: "#666" }}>Instant demo UPI approval (user@upi)</small>
+                </div>
               </label>
 
               <label className={`payment-option ${paymentMethod === "cod" ? "active" : ""}`}>

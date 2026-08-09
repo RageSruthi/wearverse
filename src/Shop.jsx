@@ -245,7 +245,15 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
                 >
                   {wished ? "♥" : "♡"}
                 </button>
-                <img src={item.image} alt={item.title} className="product-photo" loading="lazy" />
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="product-photo"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.target.src = "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80";
+                  }}
+                />
 
                 {/* Hover Quick Actions */}
                 <div className="quick-actions-overlay">

@@ -17,6 +17,8 @@ import ProductDetailModal from "./ProductDetailModal";
 import RentalCalendar from "./RentalCalendar";
 import OrderTrackingModal from "./OrderTrackingModal";
 
+export const DEFAULT_FALLBACK_IMG = "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80";
+
 function AppShell() {
   const [page, setPage] = useState("Home");
 
@@ -47,82 +49,68 @@ function AppShell() {
       : ["Home", "Shop", "Rent", "Upcycle", "Recycle", "Cart", "Dashboard"];
 
   return (
-    <div className="app">
-      {/* Sidebar Navigation */}
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-logo">W</div>
-          <div>
-            <b>WEARVERSE</b>
-            <small>CIRCULAR FASHION</small>
-          </div>
-        </div>
-
-        {/* Role & Seller Switcher */}
-        <div className="sidebar-role-box">
-          <div className="role-toggle">
-            <button
-              className={role === "buyer" ? "chip active" : "chip"}
-              onClick={() => setRole("buyer")}
-            >
-              🛒 Buyer
-            </button>
-            <button
-              className={role === "seller" ? "chip active" : "chip"}
-              onClick={() => setRole("seller")}
-            >
-              🏪 Seller
-            </button>
-          </div>
-
-          {role === "seller" && (
-            <div className="seller-select-box">
-              <small>Demo Seller Account:</small>
-              <select
-                value={activeSeller.id}
-                onChange={(e) => setActiveSeller(e.target.value)}
-              >
-                {sellers.slice(0, 4).map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+    <div className="app-top-layout">
+      {/* Top E-Commerce Horizontal Navigation Bar */}
+      <header className="top-navbar-v2">
+        <div className="nav-container-inner">
+          {/* LEFT: Logo & Brand */}
+          <div className="brand-logo-box" onClick={() => setPage("Home")} style={{ cursor: "pointer" }}>
+            <div className="brand-icon">W</div>
+            <div className="brand-text">
+              <span className="brand-title">WEARVERSE</span>
+              <small className="brand-sub">CIRCULAR FASHION</small>
             </div>
-          )}
-        </div>
-
-        <p className="menu-label">MARKETPLACE NAVIGATION</p>
-
-        {navItems.map((item) => (
-          <button
-            key={item}
-            className={`nav-button ${page === item ? "active" : ""}`}
-            onClick={() => setPage(item)}
-          >
-            <span>{iconFor(item)}</span>
-            {item}
-            {item === "Cart" && cart.length > 0 && <span className="nav-badge">{cart.length}</span>}
-          </button>
-        ))}
-
-        <div className="sidebar-bottom-info">
-          <div className="sustainability-mini-card">
-            <span>♻️ 1,000+ Items</span>
-            <small>Circular Fashion Demo</small>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content Area */}
-      <main className="main">
-        {/* Top Header Bar */}
-        <header className="topbar">
-          <div className="topbar-left">
-            <span className="current-page-label">{page}</span>
           </div>
 
-          <div className="top-right">
+          {/* CENTER: Main Horizontal Links */}
+          <nav className="horizontal-nav-links">
+            {navItems.map((item) => (
+              <button
+                key={item}
+                className={`top-nav-btn ${page === item ? "active" : ""}`}
+                onClick={() => setPage(item)}
+              >
+                <span>{iconFor(item)}</span>
+                {item}
+                {item === "Cart" && cart.length > 0 && (
+                  <span className="nav-badge">{cart.length}</span>
+                )}
+              </button>
+            ))}
+          </nav>
+
+          {/* RIGHT: Notifications, Cart, Role Switcher, Profile */}
+          <div className="top-nav-actions">
+            {/* Role & Seller Switcher */}
+            <div className="role-switch-pill">
+              <button
+                className={role === "buyer" ? "mode-btn active" : "mode-btn"}
+                onClick={() => setRole("buyer")}
+              >
+                🛒 Buyer
+              </button>
+              <button
+                className={role === "seller" ? "mode-btn active" : "mode-btn"}
+                onClick={() => setRole("seller")}
+              >
+                🏪 Seller
+              </button>
+
+              {role === "seller" && (
+                <select
+                  className="seller-select-top"
+                  value={activeSeller.id}
+                  onChange={(e) => setActiveSeller(e.target.value)}
+                >
+                  {sellers.slice(0, 4).map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
             {/* Notifications Dropdown Trigger */}
             <div className="notif-wrapper">
               <button
@@ -159,17 +147,17 @@ function AppShell() {
             </div>
 
             {/* Wishlist Button */}
-            <button className="topbar-icon-btn" onClick={() => setPage("Dashboard")}>
+            <button className="topbar-icon-btn" onClick={() => setPage("Dashboard")} title="Wishlist">
               ♡ {wishlist.length > 0 && <span className="topbar-badge">{wishlist.length}</span>}
             </button>
 
             {/* Cart Button */}
-            <button className="topbar-icon-btn" onClick={() => setPage("Cart")}>
+            <button className="topbar-icon-btn" onClick={() => setPage("Cart")} title="Shopping Cart">
               🛒 {cart.length > 0 && <span className="topbar-badge">{cart.length}</span>}
             </button>
 
             {/* User Profile */}
-            <div className="user" onClick={() => setPage("Dashboard")}>
+            <div className="user-profile-pill" onClick={() => setPage("Dashboard")}>
               <img
                 src={
                   role === "seller"
@@ -178,16 +166,20 @@ function AppShell() {
                 }
                 alt="Profile"
                 className="avatar-img"
+                onError={(e) => {
+                  e.target.src = DEFAULT_FALLBACK_IMG;
+                }}
               />
-              <div>
-                <b>{role === "seller" ? activeSeller.name : "Sruthi"}</b>
-                <small>{role === "seller" ? `Seller (${activeSeller.location})` : "Buyer Member"}</small>
-              </div>
+              <span className="user-name-text">
+                {role === "seller" ? activeSeller.name : "Sruthi"}
+              </span>
             </div>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {/* Page Switcher */}
+      {/* Main Content View Container */}
+      <main className="main-viewport-content">
         {page === "Home" && (
           <Home
             setPage={setPage}
@@ -230,7 +222,7 @@ function AppShell() {
         )}
       </main>
 
-      {/* Floating Support Chatbot anchored bottom-right */}
+      {/* Persistent Support Chatbot anchored bottom-right */}
       <ChatBot setPage={setPage} />
 
       {/* Global Modals */}
@@ -286,14 +278,14 @@ function Home({ setPage, onOpenDetail }) {
   const featured = products.slice(0, 8);
 
   return (
-    <div className="page">
-      <section className="hero">
-        <div>
-          <span className="label">♻️ CIRCULAR FASHION PLATFORM</span>
+    <div className="page-home-clean">
+      <section className="hero-clean">
+        <div className="hero-text-block">
+          <span className="label-accent">♻️ CIRCULAR FASHION PLATFORM</span>
           <h1>
             Fashion that
             <br />
-            <em>lives again.</em>
+            <em className="hero-highlight">lives again.</em>
           </h1>
           <p>
             Buy, sell, rent, upcycle, and recycle quality clothing. Backed by AI condition grading, 1,000+ demo items, 30 verified sellers, and Virtual Try-On.
@@ -312,17 +304,7 @@ function Home({ setPage, onOpenDetail }) {
           </div>
         </div>
 
-        <div className="hero-art">
-          <div className="fashion">👗</div>
-          <div className="approved">
-            ✓ AI APPROVED
-            <br />
-            <small>1,000+ Items Seeded</small>
-          </div>
-          <div className="eco">
-            ♻️<span>Give clothes<br />another life</span>
-          </div>
-        </div>
+        {/* Removed top right hero-art graphic image as requested */}
       </section>
 
       {/* Featured Items Grid */}
@@ -337,7 +319,14 @@ function Home({ setPage, onOpenDetail }) {
             >
               <div className="product-image-box">
                 <span className="badge-ai">✓ AI APPROVED</span>
-                <img src={item.image} alt={item.title} className="product-photo" />
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="product-photo"
+                  onError={(e) => {
+                    e.target.src = DEFAULT_FALLBACK_IMG;
+                  }}
+                />
               </div>
               <div className="product-card-info">
                 <small>{item.category} · {item.condition}</small>

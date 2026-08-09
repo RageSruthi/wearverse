@@ -80,8 +80,8 @@ export default function ChatBot({ onTriggerSearch, setPage }) {
     return FALLBACK;
   }
 
-  function send() {
-    const text = input.trim();
+  function sendQuery(textToSend) {
+    const text = textToSend || input.trim();
     if (!text) return;
 
     const botReply = processQuery(text);
@@ -92,6 +92,10 @@ export default function ChatBot({ onTriggerSearch, setPage }) {
       { from: "bot", text: botReply },
     ]);
     setInput("");
+  }
+
+  function send() {
+    sendQuery();
   }
 
   function handleKeyDown(e) {
@@ -113,6 +117,13 @@ export default function ChatBot({ onTriggerSearch, setPage }) {
                 {m.text}
               </div>
             ))}
+          </div>
+
+          <div className="chatbot-suggestions-row">
+            <button onClick={() => sendQuery("Show me frocks")}>👗 Frocks</button>
+            <button onClick={() => sendQuery("How does renting work?")}>🗓️ Renting</button>
+            <button onClick={() => sendQuery("How can I recycle?")}>♻️ Recycle</button>
+            <button onClick={() => sendQuery("Help upload product")}>📷 Sell</button>
           </div>
 
           <div className="chatbot-input-row">

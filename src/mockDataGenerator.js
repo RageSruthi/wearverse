@@ -1,8 +1,5 @@
 // src/mockDataGenerator.js
-//
 // Deterministically generates 30 Demo Sellers and 1,000+ Realistic Demo Products.
-// Uses a stable PRNG (seed = 42) so product IDs, names, prices, categories,
-// and images remain identical across page reloads.
 
 export const CATEGORIES = [
   "Dresses",
@@ -45,47 +42,42 @@ export const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 export const CONDITIONS = ["Like New", "Excellent", "Good", "Fair"];
 export const LOCATIONS = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", "Jaipur", "Ahmedabad", "Surat"];
 
+export const DEFAULT_FALLBACK_IMAGE = "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80";
+
 export const IMAGE_POOL = {
   Dresses: [
     "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1502716119720-b23a93e5fe1b?auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=600&q=80",
   ],
   Shirts: [
     "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1620012253295-c15cc3e65df4?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1589310243389-96a5483213a8?auto=format&fit=crop&w=600&q=80",
   ],
   "T-Shirts": [
     "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=600&q=80",
   ],
   Jeans: [
     "https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1475178626620-a4d074967452?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1582552938357-32b906df40cb?auto=format&fit=crop&w=600&q=80",
   ],
   Jackets: [
     "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1544022613-e87ca75a784a?auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1521223890158-f9f7c3d5d504?auto=format&fit=crop&w=600&q=80",
   ],
   Sarees: [
     "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1610030470298-0be6f1936c53?auto=format&fit=crop&w=600&q=80",
   ],
   Kurtis: [
     "https://images.unsplash.com/photo-1583391733956-6c78276477e2?auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=600&q=80",
   ],
   Skirts: [
     "https://images.unsplash.com/photo-1583496661160-fb5886a13d27?auto=format&fit=crop&w=600&q=80",
@@ -93,11 +85,9 @@ export const IMAGE_POOL = {
   ],
   Shorts: [
     "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1591195853866-be0388b1de08?auto=format&fit=crop&w=600&q=80",
   ],
   Hoodies: [
     "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?auto=format&fit=crop&w=600&q=80",
   ],
   "Co-ords": [
     "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80",
@@ -109,11 +99,9 @@ export const IMAGE_POOL = {
   ],
   Activewear: [
     "https://images.unsplash.com/photo-1518310383802-640c2de311b2?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1506152983158-b4a74a01c721?auto=format&fit=crop&w=600&q=80",
   ],
   Blazers: [
     "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1548624313-0396c75e4b1a?auto=format&fit=crop&w=600&q=80",
   ],
 };
 
@@ -190,7 +178,7 @@ export function generateDemoSellers() {
     sellers.push({
       id: `seller-demo-${i}`,
       name,
-      avatar: `https://images.unsplash.com/photo-${1500000000000 + (i * 123456) % 999999}?auto=format&fit=crop&w=150&q=80`,
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
       location: `${loc}, IN`,
       rating,
       salesCount: sales,
@@ -208,7 +196,7 @@ export function generate1000Products(sellersList = []) {
   const sellers = sellersList.length ? sellersList : generateDemoSellers();
   const products = [];
 
-  const totalCount = 1024; // 1,000+ products
+  const totalCount = 1024;
 
   for (let i = 1; i <= totalCount; i++) {
     const category = CATEGORIES[i % CATEGORIES.length];
@@ -221,18 +209,15 @@ export function generate1000Products(sellersList = []) {
     const seller = sellers[i % sellers.length];
     const size = SIZES[Math.floor(rng() * SIZES.length)];
 
-    // Images
     const pool = IMAGE_POOL[category] || IMAGE_POOL["Dresses"];
     const mainImg = pool[(i + Math.floor(rng() * pool.length)) % pool.length];
     const secondImg = pool[(i + 1) % pool.length];
 
-    // Decide availability mode: buy only, rent only, or both
     const modeRoll = rng();
     const isBuyAvailable = modeRoll > 0.25;
     const isRentAvailable = modeRoll < 0.75;
     const mode = isBuyAvailable && isRentAvailable ? "both" : isBuyAvailable ? "shop" : "rent";
 
-    // Pricing logic
     const baseVal = 800 + Math.floor(rng() * 7500);
     const price = Math.round(baseVal * (condition === "Like New" ? 0.7 : condition === "Excellent" ? 0.55 : condition === "Good" ? 0.4 : 0.3));
     const rentalPrice = Math.max(99, Math.round(price * 0.12));
@@ -263,7 +248,7 @@ export function generate1000Products(sellersList = []) {
       originalPrice: baseVal,
       rentalPrice,
       deposit,
-      mode, // 'shop' | 'rent' | 'both'
+      mode,
       type: mode === 'rent' ? 'rent' : 'shop',
       image: mainImg,
       images: [mainImg, secondImg],
