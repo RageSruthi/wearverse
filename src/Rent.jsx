@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useStore } from "./StoreContext";
 import { CATEGORIES } from "./mockDataGenerator";
 
-export default function Rent({ onOpenTryOn, setPage }) {
+export default function Rent({ setPage }) {
   const { products, addToCart } = useStore();
 
   const [query, setQuery] = useState("");
@@ -16,7 +16,7 @@ export default function Rent({ onOpenTryOn, setPage }) {
       if (category !== "All" && p.category !== category) return false;
       if (query.trim()) {
         const q = query.trim().toLowerCase();
-        const text = `${p.title} ${p.category} ${p.subcategory} ${p.color}`.toLowerCase();
+        const text = `${p.title} ${p.category} ${p.subcategory}`.toLowerCase();
         if (!text.includes(q)) return false;
       }
       return true;
@@ -25,7 +25,6 @@ export default function Rent({ onOpenTryOn, setPage }) {
 
   return (
     <div className="page">
-      {/* Header Banner */}
       <div className="page-heading">
         <span className="label">WEARVERSE RENTAL WARDROBE</span>
         <h1>Rent High-Fashion & Ethnic Wear</h1>
@@ -86,6 +85,11 @@ export default function Rent({ onOpenTryOn, setPage }) {
               <h3>{item.title}</h3>
               <p className="seller-byline">Owner: {item.sellerName} · {item.location}</p>
 
+              {/* Customer Reviews Snippet */}
+              <div style={{ fontSize: "11px", color: "#666", margin: "4px 0", fontStyle: "italic" }}>
+                💬 "{item.reviews?.[0]?.comment || "Great condition, highly recommended!"}"
+              </div>
+
               <div className="price-mode-row">
                 <b>₹{item.rentalPrice}/day</b>
                 <span className="status-pill mode-rent">RENT AVAILABLE</span>
@@ -94,17 +98,10 @@ export default function Rent({ onOpenTryOn, setPage }) {
               <div className="card-buttons">
                 <button
                   className="primary rent-now-btn"
+                  style={{ width: "100%" }}
                   onClick={() => setSelectedRentalItem(item)}
                 >
                   🗓️ Choose Dates & Rent →
-                </button>
-                <button
-                  className="secondary"
-                  onClick={() => {
-                    if (onOpenTryOn) onOpenTryOn(item);
-                  }}
-                >
-                  📷 Try On
                 </button>
               </div>
             </div>

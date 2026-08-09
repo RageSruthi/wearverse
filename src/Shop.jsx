@@ -1,15 +1,14 @@
 // src/Shop.jsx
 import { useMemo, useState } from "react";
 import { useStore } from "./StoreContext";
-import { CATEGORIES, COLORS, CONDITIONS, MATERIALS, SIZES } from "./mockDataGenerator";
+import { CATEGORIES, CONDITIONS, MATERIALS, SIZES } from "./mockDataGenerator";
 
-export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }) {
+export default function Shop({ onOpenDetail }) {
   const { products, addToCart, wishlist, toggleWishlist, recordView } = useStore();
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
   const [size, setSize] = useState("All");
-  const [color, setColor] = useState("All");
   const [condition, setCondition] = useState("All");
   const [material, setMaterial] = useState("All");
   const [mode, setMode] = useState("all");
@@ -18,15 +17,11 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
   const [visibleCount, setVisibleCount] = useState(24);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Compute filtered products with strict color checking
+  // Compute filtered products (Color section removed as requested)
   const filteredProducts = useMemo(() => {
     let result = products.filter((p) => {
       if (category !== "All" && p.category !== category) return false;
       if (size !== "All" && p.size !== size && !p.sizesAvailable?.includes(size)) return false;
-
-      // Strict Color Filter
-      if (color !== "All" && p.color.toLowerCase() !== color.toLowerCase()) return false;
-
       if (condition !== "All" && p.condition !== condition) return false;
       if (material !== "All" && p.material !== material) return false;
 
@@ -38,14 +33,13 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
 
       if (query.trim()) {
         const q = query.trim().toLowerCase();
-        const searchTarget = `${p.title} ${p.category} ${p.subcategory} ${p.color} ${p.material} ${p.sellerName}`.toLowerCase();
+        const searchTarget = `${p.title} ${p.category} ${p.subcategory} ${p.material} ${p.sellerName}`.toLowerCase();
         if (!searchTarget.includes(q)) return false;
       }
 
       return true;
     });
 
-    // Sorting
     switch (sortBy) {
       case "price_asc":
         result.sort((a, b) => (mode === "rent" ? a.rentalPrice - b.rentalPrice : a.price - b.price));
@@ -59,15 +53,12 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
       case "rating":
         result.sort((a, b) => b.rating - a.rating);
         break;
-      case "popular":
-        result.sort((a, b) => b.reviewsCount - a.reviewsCount);
-        break;
       default:
         break;
     }
 
     return result;
-  }, [products, query, category, size, color, condition, material, mode, maxPrice, sortBy]);
+  }, [products, query, category, size, condition, material, mode, maxPrice, sortBy]);
 
   const displayedProducts = filteredProducts.slice(0, visibleCount);
 
@@ -75,7 +66,6 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
     setQuery("");
     setCategory("All");
     setSize("All");
-    setColor("All");
     setCondition("All");
     setMaterial("All");
     setMode("all");
@@ -86,28 +76,26 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
   return (
     <div className="page">
       <div className="page-heading">
-        <span className="label">CIRCULAR FASHION MARKETPLACE</span>
-        <h1>Explore Catalog ({filteredProducts.length.toLocaleString()} Items)</h1>
+        <span className="label">SUSTAINABLE MARKETPLACE CATALOG</span>
+        <h1>Explore Waredrobe ({filteredProducts.length.toLocaleString()} Items)</h1>
         <p>Verified pre-loved, vintage, and rental clothing uploaded by real sellers across India.</p>
       </div>
 
-      {/* Main Search & Control Toolbar */}
+      {/* Search Bar & Toolbar */}
       <div className="shop-toolbar-v2">
         <div className="search-bar-wrap">
           <span className="search-icon">🔍</span>
           <input
             type="text"
             className="shop-search-input"
-            placeholder="Search frocks, sarees, denim jackets, silk, black dresses..."
+            placeholder="Search frocks, sarees, denim jackets, silk, dresses..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
               setVisibleCount(24);
             }}
           />
-          {query && (
-            <button className="clear-search-btn" onClick={() => setQuery("")}>×</button>
-          )}
+          {query && <button className="clear-search-btn" onClick={() => setQuery("")}>×</button>}
         </div>
 
         <div className="toolbar-actions">
@@ -115,7 +103,7 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
             className={`filter-toggle-btn ${showFilters ? "active" : ""}`}
             onClick={() => setShowFilters((prev) => !prev)}
           >
-            🎛️ Filters {color !== "All" || category !== "All" || condition !== "All" ? "•" : ""}
+            🎛️ Filters {category !== "All" || condition !== "All" ? "•" : ""}
           </button>
 
           <div className="sort-wrapper">
@@ -126,13 +114,12 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
               <option value="price_desc">Price: High to Low</option>
               <option value="newest">Newest Arrivals</option>
               <option value="rating">Highest Rated</option>
-              <option value="popular">Most Popular</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Category Pills Quick Strip */}
+      {/* Category Pills Strip */}
       <div className="category-pills-row">
         <button
           className={`cat-pill ${category === "All" ? "active" : ""}`}
@@ -157,26 +144,7 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
         ))}
       </div>
 
-      {/* Color Filter Quick Strip */}
-      <div className="color-pills-row" style={{ display: "flex", gap: "8px", overflowX: "auto", marginBottom: "20px" }}>
-        <button
-          className={`cat-pill ${color === "All" ? "active" : ""}`}
-          onClick={() => setColor("All")}
-        >
-          🎨 All Colors
-        </button>
-        {COLORS.map((clr) => (
-          <button
-            key={clr}
-            className={`cat-pill ${color === clr ? "active" : ""}`}
-            onClick={() => setColor(clr)}
-          >
-            {clr}
-          </button>
-        ))}
-      </div>
-
-      {/* Expanded Multi-Filter Panel (Brand Filter Removed as requested) */}
+      {/* Expanded Filters Drawer (Colors Section Removed) */}
       {showFilters && (
         <div className="filter-drawer">
           <div className="filter-drawer-header">
@@ -191,16 +159,6 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
                 <option value="all">All (Buy & Rent)</option>
                 <option value="shop">Buy / Resale Only</option>
                 <option value="rent">Rent Available Only</option>
-              </select>
-            </div>
-
-            <div>
-              <label>Color</label>
-              <select value={color} onChange={(e) => setColor(e.target.value)}>
-                <option value="All">All Colors</option>
-                {COLORS.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
               </select>
             </div>
 
@@ -249,13 +207,13 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
         </div>
       )}
 
-      {/* Product Cards Grid */}
+      {/* Product Grid */}
       <div className="products">
         {filteredProducts.length === 0 && (
           <div className="no-results-box" style={{ gridColumn: "1 / -1", padding: "60px", textAlign: "center", background: "#ffffff", borderRadius: "16px", border: "1px solid #e1ebe4" }}>
             <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔍</div>
-            <h3 style={{ margin: "0 0 8px", fontSize: "20px" }}>No products found matching your search or filters</h3>
-            <p style={{ color: "#666", marginBottom: "20px" }}>Try clearing some filters or searching for terms like "frock", "saree", "denim", or "kurti".</p>
+            <h3 style={{ margin: "0 0 8px", fontSize: "20px" }}>No products found matching your search</h3>
+            <p style={{ color: "#666", marginBottom: "20px" }}>Try resetting filters or searching for terms like "frock", "saree", or "kurti".</p>
             <button className="primary" onClick={resetFilters}>
               Reset Filters & Search
             </button>
@@ -275,7 +233,6 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
             >
               <div className="product-image-box">
                 <span className="badge-ai">✓ AI APPROVED</span>
-                <span className="eco-score-chip">♻️ {item.sustainabilityScore}</span>
                 <button
                   className={`heart-btn ${wished ? "active" : ""}`}
                   onClick={(e) => {
@@ -295,29 +252,6 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
                     e.target.src = "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80";
                   }}
                 />
-
-                {/* Clean Hover Actions - No Green Card Overlay */}
-                <div className="quick-actions-overlay">
-                  <button
-                    className="quick-act-btn tryon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onOpenTryOn) onOpenTryOn(item);
-                    }}
-                  >
-                    📷 Try On
-                  </button>
-                  <button
-                    className="quick-act-btn detail"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      recordView(item);
-                      if (onOpenDetail) onOpenDetail(item);
-                    }}
-                  >
-                    👁️ Details
-                  </button>
-                </div>
               </div>
 
               <div className="product-card-info">
@@ -329,6 +263,11 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
                 <h3>{item.title}</h3>
                 <p className="seller-byline">Sold by {item.sellerName} · {item.location}</p>
 
+                {/* Customer Reviews Snippet */}
+                <div style={{ fontSize: "11px", color: "#666", margin: "6px 0", fontStyle: "italic" }}>
+                  💬 "{item.reviews?.[0]?.comment || "Excellent condition and fast delivery!"}"
+                </div>
+
                 <div className="price-mode-row">
                   <div>
                     <b>₹{item.price}</b>
@@ -336,12 +275,12 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
                       <span className="rent-tag">or ₹{item.rentalPrice}/day</span>
                     )}
                   </div>
-                  <span className={`status-pill mode-${item.mode}`}>{item.mode.toUpperCase()}</span>
                 </div>
 
                 <div className="card-buttons">
                   <button
                     className="primary add-cart-btn"
+                    style={{ width: "100%" }}
                     onClick={(e) => {
                       e.stopPropagation();
                       addToCart(item, { mode: item.mode === "rent" ? "rent" : "shop" });
@@ -349,17 +288,6 @@ export default function Shop({ onOpenDetail, onOpenTryOn, onOpenRentalCalendar }
                   >
                     Add to Cart
                   </button>
-                  {item.mode !== "shop" && (
-                    <button
-                      className="secondary rent-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (onOpenRentalCalendar) onOpenRentalCalendar(item);
-                      }}
-                    >
-                      🗓️ Rent
-                    </button>
-                  )}
                 </div>
               </div>
             </div>

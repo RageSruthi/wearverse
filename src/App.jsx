@@ -12,7 +12,6 @@ import Cart from "./Cart";
 import SellerUpload from "./SellerUpload";
 import Dashboard from "./Dashboard";
 import ChatBot from "./ChatBot";
-import VirtualTryOn from "./VirtualTryOn";
 import ProductDetailModal from "./ProductDetailModal";
 import OrderTrackingModal from "./OrderTrackingModal";
 
@@ -23,7 +22,6 @@ function AppShell() {
 
   // Modals state
   const [detailProduct, setDetailProduct] = useState(null);
-  const [tryOnProduct, setTryOnProduct] = useState(null);
   const [trackingOrderId, setTrackingOrderId] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
 
@@ -37,8 +35,6 @@ function AppShell() {
     wishlist,
   } = useStore();
 
-  // BUYER NAV: Home, Shop, Rent, Cart, Dashboard (Upcycle & Recycle removed from Buyer nav)
-  // SELLER NAV: Upload, Upcycle Studio, Recycle Network (Dashboard removed for Seller nav)
   const navItems =
     role === "seller"
       ? ["Upload", "Upcycle Studio", "Recycle Network"]
@@ -46,16 +42,16 @@ function AppShell() {
 
   return (
     <div className="app-top-layout">
-      {/* Top E-Commerce Horizontal Navigation Bar */}
+      {/* Top Horizontal Navigation Bar */}
       <header className="top-navbar-v2">
         <div className="nav-container-inner">
-          {/* TOP LEFT: WEARVERSE Logo & Tagline */}
-          <div className="brand-logo-box" onClick={() => setPage(role === "seller" ? "Upload" : "Home")} style={{ cursor: "pointer" }}>
-            <div className="brand-icon">W</div>
+          {/* TOP LEFT: WearVerse Emblem Logo & Tagline */}
+          <div className="brand-logo-box" onClick={() => setPage(role === "seller" ? "Upload" : "Home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}>
+            <img src="/wearverse-logo.svg" alt="WearVerse Logo" style={{ width: "42px", height: "42px", borderRadius: "50%" }} />
             <div className="brand-text">
-              <span className="brand-title">WEARVERSE</span>
-              <small className="brand-sub" style={{ color: "#a3cfbb", fontSize: "9px", fontWeight: "bold" }}>
-                Give your clothes a Second life
+              <span className="brand-title" style={{ fontFamily: "Georgia, serif", fontWeight: "900", fontSize: "20px", letterSpacing: "1px", color: "white" }}>WearVerse</span>
+              <small className="brand-sub" style={{ color: "#a3cfbb", fontSize: "8px", fontWeight: "bold", letterSpacing: "1.2px" }}>
+                FASHION THAT LIVES MORE THAN ONE LIFE
               </small>
             </div>
           </div>
@@ -80,7 +76,7 @@ function AppShell() {
             })}
           </nav>
 
-          {/* TOP RIGHT: Role Switcher, Cart, Profile (Bell Icon Removed) */}
+          {/* TOP RIGHT: Role Switcher, Cart, Profile Button (Profile Photo Removed) */}
           <div className="top-nav-actions">
             {/* Role & Seller Switcher */}
             <div className="role-switch-pill">
@@ -132,24 +128,22 @@ function AppShell() {
               </button>
             )}
 
-            {/* User Profile Trigger - Opens Profile Details & Edit Modal */}
-            <div className="user-profile-pill" onClick={() => setShowProfileModal(true)}>
-              <img
-                src={
-                  role === "seller"
-                    ? activeSeller.avatar
-                    : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
-                }
-                alt="Profile"
-                className="avatar-img"
-                onError={(e) => {
-                  e.target.src = DEFAULT_FALLBACK_IMG;
-                }}
-              />
-              <span className="user-name-text">
-                {role === "seller" ? activeSeller.name : "Sruthi R."}
-              </span>
-            </div>
+            {/* User Profile Button (Profile Photo Removed as requested) */}
+            <button
+              onClick={() => setShowProfileModal(true)}
+              style={{
+                background: "rgba(255,255,255,0.12)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                color: "white",
+                padding: "6px 14px",
+                borderRadius: "20px",
+                fontSize: "12px",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              👤 {role === "seller" ? activeSeller.name : "Sruthi R."}
+            </button>
           </div>
         </div>
       </header>
@@ -160,19 +154,16 @@ function AppShell() {
           <Home
             setPage={setPage}
             onOpenDetail={setDetailProduct}
-            onOpenTryOn={setTryOnProduct}
           />
         )}
         {page === "Shop" && (
           <Shop
             onOpenDetail={setDetailProduct}
-            onOpenTryOn={setTryOnProduct}
           />
         )}
         {page === "Rent" && (
           <Rent
             onOpenDetail={setDetailProduct}
-            onOpenTryOn={setTryOnProduct}
             setPage={setPage}
           />
         )}
@@ -181,20 +172,18 @@ function AppShell() {
         {page === "Cart" && (
           <Cart
             setPage={setPage}
-            onOpenTryOn={setTryOnProduct}
             onOpenOrderTracking={setTrackingOrderId}
           />
         )}
         {page === "Upload" && <SellerUpload setPage={setPage} />}
         {page === "Dashboard" && (
           <Dashboard
-            setPage={setPage}
             onOpenOrderTracking={setTrackingOrderId}
           />
         )}
       </main>
 
-      {/* Persistent ChatGPT Style Support Chatbot anchored at Bottom Right */}
+      {/* Persistent ChatGPT Support Chatbot anchored at Bottom Right */}
       <ChatBot setPage={setPage} />
 
       {/* Profile Details & Edit Modal */}
@@ -207,15 +196,6 @@ function AppShell() {
         <ProductDetailModal
           product={detailProduct}
           onClose={() => setDetailProduct(null)}
-          onOpenTryOn={setTryOnProduct}
-        />
-      )}
-
-      {/* Virtual Try-On Modal */}
-      {tryOnProduct && (
-        <VirtualTryOn
-          activeProduct={tryOnProduct}
-          onClose={() => setTryOnProduct(null)}
         />
       )}
 
@@ -251,14 +231,14 @@ function Home({ setPage, onOpenDetail }) {
     <div className="page-home-clean">
       <section className="hero-clean">
         <div className="hero-text-block">
-          <span className="label-accent">♻️ WEARVERSE PLATFORM</span>
+          <span className="label-accent">🌿 SUSTAINABLE FASHION MARKETPLACE</span>
           <h1>
-            Give your clothes
+            Fashion that lives
             <br />
-            <em className="hero-highlight">a Second life.</em>
+            <em className="hero-highlight">more than one life.</em>
           </h1>
           <p>
-            Buy, sell, rent, upcycle with tailors, and recycle to farmers. Backed by 10,000 verified marketplace items, AI condition scanning, and Virtual Try-On.
+            Buy, sell, rent designer outfits, upcycle with artisan tailors, and recycle to farmers across 10,000+ verified listings.
           </p>
 
           <div className="hero-buttons">
@@ -274,7 +254,7 @@ function Home({ setPage, onOpenDetail }) {
 
       {/* Featured Items Grid */}
       <div className="home-featured-section" style={{ marginTop: "40px" }}>
-        <h2>🔥 Featured Marketplace Listings</h2>
+        <h2>🔥 Featured Marketplace Listings (10,000+ Items)</h2>
         <div className="products">
           {featured.map((item) => (
             <div

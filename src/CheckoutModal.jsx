@@ -231,7 +231,23 @@ export default function CheckoutModal({ onClose, onOrderPlaced }) {
               </div>
             </div>
 
-            <button type="submit" className="sell-primary full-width checkout-submit-btn">
+            <button
+              type="submit"
+              className="primary"
+              style={{
+                width: "100%",
+                padding: "16px",
+                fontSize: "16px",
+                fontWeight: "900",
+                background: "#174d39",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "12px",
+                cursor: "pointer",
+                boxShadow: "0 8px 20px rgba(23, 77, 57, 0.3)",
+                marginTop: "16px",
+              }}
+            >
               PLACE ORDER (₹{total}) →
             </button>
           </div>
