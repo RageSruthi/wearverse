@@ -41,7 +41,21 @@ function saveToLS(key, value) {
   }
 }
 
+const LS_AUTH = "wv_auth_v2";
+const LS_USER = "wv_user_v2";
+
 export function StoreProvider({ children }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(() =>
+    loadFromLS(LS_AUTH, () => false)
+  );
+  const [authUser, setAuthUser] = useState(() =>
+    loadFromLS(LS_USER, () => ({
+      name: "Sruthi R.",
+      email: "sruthi.wearverse@gmail.com",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+    }))
+  );
+
   // Initialize Sellers first
   const [sellers] = useState(() => loadFromLS(LS_SELLERS, () => generateDemoSellers()));
 
@@ -79,6 +93,8 @@ export function StoreProvider({ children }) {
   );
 
   // Sync to localStorage
+  useEffect(() => saveToLS(LS_AUTH, isAuthenticated), [isAuthenticated]);
+  useEffect(() => saveToLS(LS_USER, authUser), [authUser]);
   useEffect(() => saveToLS(LS_PRODUCTS, products), [products]);
   useEffect(() => saveToLS(LS_SELLERS, sellers), [sellers]);
   useEffect(() => saveToLS(LS_CART, cart), [cart]);
@@ -96,13 +112,41 @@ export function StoreProvider({ children }) {
 
   const currentUser = {
     id: role === "seller" ? activeSeller.id : "demo-buyer-1",
-    name: role === "seller" ? activeSeller.name : "Sruthi (Buyer)",
+    name: role === "seller" ? activeSeller.name : authUser.name || "Sruthi (Buyer)",
+    email: authUser.email,
     role,
-    avatar: role === "seller" ? activeSeller.avatar : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+    avatar: role === "seller" ? activeSeller.avatar : authUser.avatar,
     sellerId: activeSeller.id,
   };
 
   // --- ACTIONS ---
+
+  function login({ email, name, role: newRole }) {
+    setIsAuthenticated(true);
+    setAuthUser({
+      name: name || email.split("@")[0],
+      email: email || "user@wearverse.com",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+    });
+    if (newRole) setRoleState(newRole);
+    addNotification("Authentication Successful! 🔑", `Welcome back, ${name || email}!`, "🎉");
+  }
+
+  function loginWithGoogle(newRole = "buyer") {
+    setIsAuthenticated(true);
+    setAuthUser({
+      name: "Sruthi (Google Verified)",
+      email: "sruthi.google@gmail.com",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+    });
+    if (newRole) setRoleState(newRole);
+    addNotification("Google Sign-In Successful! 🌐", "Authenticated securely via Google OAuth demo.", "G");
+  }
+
+  function logout() {
+    setIsAuthenticated(false);
+    addNotification("Logged Out", "You have signed out of WearVerse.", "👋");
+  }
 
   function setRole(newRole) {
     setRoleState(newRole);
@@ -419,6 +463,11 @@ export function StoreProvider({ children }) {
   }
 
   const value = {
+    isAuthenticated,
+    authUser,
+    login,
+    loginWithGoogle,
+    logout,
     products,
     sellers,
     activeSeller,

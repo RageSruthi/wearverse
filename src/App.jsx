@@ -14,18 +14,18 @@ import Dashboard from "./Dashboard";
 import ChatBot from "./ChatBot";
 import ProductDetailModal from "./ProductDetailModal";
 import OrderTrackingModal from "./OrderTrackingModal";
+import LoginPage from "./LoginPage";
 
 export const DEFAULT_FALLBACK_IMG = "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80";
 
 function AppShell() {
   const [page, setPage] = useState("Home");
-
-  // Modals state
   const [detailProduct, setDetailProduct] = useState(null);
   const [trackingOrderId, setTrackingOrderId] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
 
   const {
+    isAuthenticated,
     role,
     setRole,
     activeSeller,
@@ -34,6 +34,10 @@ function AppShell() {
     cart,
     wishlist,
   } = useStore();
+
+  if (!isAuthenticated) {
+    return <LoginPage onLoginSuccess={() => setPage("Home")} />;
+  }
 
   const navItems =
     role === "seller"
@@ -288,7 +292,7 @@ function Home({ setPage, onOpenDetail }) {
 }
 
 function ProfileEditModal({ onClose }) {
-  const { role, activeSeller } = useStore();
+  const { role, activeSeller, logout } = useStore();
   const [profile, setProfile] = useState({
     name: role === "seller" ? activeSeller.name : "Sruthi R.",
     email: "sruthi.wearverse@gmail.com",
@@ -361,6 +365,18 @@ function ProfileEditModal({ onClose }) {
 
             <button type="submit" className="primary" style={{ padding: "12px", marginTop: "8px" }}>
               Save Profile Changes →
+            </button>
+
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => {
+                onClose();
+                logout();
+              }}
+              style={{ padding: "10px", marginTop: "4px", color: "#c53030", borderColor: "#feb2b2" }}
+            >
+              🔑 Sign Out / Switch Account
             </button>
           </form>
         )}
