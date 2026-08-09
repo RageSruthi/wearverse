@@ -16,7 +16,7 @@ const StoreContext = createContext(null);
 
 const LS_AUTH = "wv_auth_v2";
 const LS_USER = "wv_user_v2";
-const LS_PRODUCTS = "wv_products_v4";
+const LS_PRODUCTS = "wv_products_v5";
 const LS_SELLERS = "wv_sellers_v2";
 const LS_CART = "wv_cart_v2";
 const LS_WISHLIST = "wv_wishlist_v2";
