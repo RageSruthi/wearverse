@@ -1,0 +1,2737 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>WearVerse | Virtual Try-On</title>
+
+<!-- MediaPipe Tasks Vision -->
+<script type="module">
+
+import {
+    PoseLandmarker,
+    FilesetResolver
+}
+from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22";
+
+
+// ============================================================
+// GLOBAL VARIABLES
+// ============================================================
+
+let poseLandmarker = null;
+
+let cameraStream = null;
+
+let cameraRunning = false;
+
+let lastVideoTime = -1;
+
+let selectedDress = "dress1";
+
+let personDetected = false;
+
+let animationFrame = null;
+
+
+// ============================================================
+// DOM ELEMENTS
+// ============================================================
+
+const video =
+    document.getElementById("camera");
+
+const canvas =
+    document.getElementById("tryOnCanvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+const startButton =
+    document.getElementById("startCamera");
+
+const stopButton =
+    document.getElementById("stopCamera");
+
+const captureButton =
+    document.getElementById("capture");
+
+const retakeButton =
+    document.getElementById("retake");
+
+const status =
+    document.getElementById("status");
+
+const statusDot =
+    document.getElementById("statusDot");
+
+const message =
+    document.getElementById("message");
+
+const dressName =
+    document.getElementById("dressName");
+
+const matrixOutput =
+    document.getElementById("matrixOutput");
+
+const capturedImage =
+    document.getElementById("capturedImage");
+
+const preview =
+    document.getElementById("preview");
+
+
+// ============================================================
+// DRESS DATA
+// ============================================================
+
+/*
+    Each dress contains:
+
+    name
+    main color
+    secondary color
+
+    The clothing is drawn mathematically on the canvas.
+
+    Therefore no additional image files are required.
+*/
+
+const dresses = {
+
+    dress1: {
+
+        name: "Rose Dress",
+
+        color: "#d86a87",
+
+        secondary: "#b84e6b"
+
+    },
+
+    dress2: {
+
+        name: "Blue Casual",
+
+        color: "#4d91c7",
+
+        secondary: "#316f9e"
+
+    },
+
+    dress3: {
+
+        name: "Denim Jacket",
+
+        color: "#426b91",
+
+        secondary: "#2e4f6c"
+
+    },
+
+    dress4: {
+
+        name: "Ethnic Style",
+
+        color: "#d39a4a",
+
+        secondary: "#a96f25"
+
+    }
+
+};
+
+
+// ============================================================
+// INITIALIZE POSE MODEL
+// ============================================================
+
+async function loadPoseModel() {
+
+    try {
+
+        message.innerText =
+            "Loading body detection model...";
+
+        const vision =
+            await FilesetResolver.forVisionTasks(
+
+                "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm"
+
+            );
+
+
+        poseLandmarker =
+            await PoseLandmarker.createFromOptions(
+
+                vision,
+
+                {
+
+                    baseOptions: {
+
+                        modelAssetPath:
+
+                        "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+
+                        delegate: "GPU"
+
+                    },
+
+                    runningMode: "VIDEO",
+
+                    numPoses: 1,
+
+                    minPoseDetectionConfidence: 0.5,
+
+                    minPosePresenceConfidence: 0.5,
+
+                    minTrackingConfidence: 0.5
+
+                }
+
+            );
+
+
+        message.innerText =
+            "Body detection ready. Start the camera.";
+
+        startButton.disabled = false;
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+        message.innerText =
+            "Unable to load body detection model.";
+
+    }
+
+}
+
+
+// ============================================================
+// START CAMERA
+// ============================================================
+
+async function startCamera() {
+
+    try {
+
+        cameraStream =
+            await navigator.mediaDevices.getUserMedia({
+
+                video: {
+
+                    width: {
+                        ideal: 1280
+                    },
+
+                    height: {
+                        ideal: 720
+                    },
+
+                    facingMode: "user"
+
+                },
+
+                audio: false
+
+            });
+
+
+        video.srcObject =
+            cameraStream;
+
+
+        await video.play();
+
+
+        cameraRunning = true;
+
+
+        canvas.width =
+            video.videoWidth;
+
+        canvas.height =
+            video.videoHeight;
+
+
+        startButton.disabled = true;
+
+        stopButton.disabled = false;
+
+        captureButton.disabled = true;
+
+
+        status.innerText =
+            "Searching for your body...";
+
+        statusDot.className =
+            "statusDot searching";
+
+
+        message.innerText =
+            "Stand where your shoulders and hips are visible.";
+
+
+        detectBody();
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+        message.innerText =
+            "Camera access was denied. Allow camera permission and try again.";
+
+    }
+
+}
+
+
+// ============================================================
+// STOP CAMERA
+// ============================================================
+
+function stopCamera() {
+
+    cameraRunning = false;
+
+
+    if(cameraStream) {
+
+        const tracks =
+            cameraStream.getTracks();
+
+
+        for(let i = 0; i < tracks.length; i++) {
+
+            tracks[i].stop();
+
+        }
+
+
+        cameraStream = null;
+
+    }
+
+
+    video.srcObject = null;
+
+
+    if(animationFrame) {
+
+        cancelAnimationFrame(animationFrame);
+
+    }
+
+
+    startButton.disabled = false;
+
+    stopButton.disabled = true;
+
+    captureButton.disabled = true;
+
+
+    status.innerText =
+        "Camera stopped";
+
+    statusDot.className =
+        "statusDot";
+
+
+    message.innerText =
+        "Start the camera to try an outfit.";
+
+}
+
+
+// ============================================================
+// BODY DETECTION
+// ============================================================
+
+function detectBody() {
+
+    if(!cameraRunning || !poseLandmarker) {
+
+        return;
+
+    }
+
+
+    const currentTime =
+        performance.now();
+
+
+    if(video.currentTime !== lastVideoTime) {
+
+        lastVideoTime =
+            video.currentTime;
+
+
+        const result =
+            poseLandmarker.detectForVideo(
+
+                video,
+
+                currentTime
+
+            );
+
+
+        processPose(result);
+
+    }
+
+
+    animationFrame =
+        requestAnimationFrame(detectBody);
+
+}
+
+
+// ============================================================
+// PROCESS BODY LANDMARKS
+// ============================================================
+
+function processPose(result) {
+
+    if(
+
+        !result.landmarks ||
+
+        result.landmarks.length === 0
+
+    ) {
+
+        personDetected = false;
+
+
+        captureButton.disabled = true;
+
+
+        status.innerText =
+            "No person detected";
+
+
+        statusDot.className =
+            "statusDot";
+
+
+        message.innerText =
+            "Please stand in front of the camera.";
+
+
+        return;
+
+    }
+
+
+    const landmarks =
+        result.landmarks[0];
+
+
+    /*
+        MediaPipe landmark numbers:
+
+        11 = LEFT SHOULDER
+        12 = RIGHT SHOULDER
+
+        23 = LEFT HIP
+        24 = RIGHT HIP
+    */
+
+
+    const leftShoulder =
+        landmarks[11];
+
+    const rightShoulder =
+        landmarks[12];
+
+    const leftHip =
+        landmarks[23];
+
+    const rightHip =
+        landmarks[24];
+
+
+    /*
+        Visibility check.
+
+        If the important body points are visible,
+        we consider the person suitable for try-on.
+    */
+
+    if(
+
+        leftShoulder.visibility < 0.45 ||
+
+        rightShoulder.visibility < 0.45 ||
+
+        leftHip.visibility < 0.35 ||
+
+        rightHip.visibility < 0.35
+
+    ) {
+
+        personDetected = false;
+
+
+        captureButton.disabled = true;
+
+
+        status.innerText =
+            "Body partly hidden";
+
+
+        statusDot.className =
+            "statusDot searching";
+
+
+        message.innerText =
+            "Move back slightly so your shoulders and hips are visible.";
+
+
+        return;
+
+    }
+
+
+    personDetected = true;
+
+
+    captureButton.disabled = false;
+
+
+    status.innerText =
+        "✓ Human body detected";
+
+
+    statusDot.className =
+        "statusDot detected";
+
+
+    message.innerText =
+        "Great! Select an outfit and see how it fits.";
+
+
+    /*
+        Draw the live virtual outfit.
+    */
+
+    drawLiveTryOn(landmarks);
+
+}
+
+
+// ============================================================
+// DRAW LIVE TRY-ON
+// ============================================================
+
+function drawLiveTryOn(landmarks) {
+
+    ctx.clearRect(
+
+        0,
+
+        0,
+
+        canvas.width,
+
+        canvas.height
+
+    );
+
+
+    /*
+        We use:
+
+        shoulders
+        hips
+
+        to calculate the clothing size.
+
+        This is where the matrix/vector style
+        coordinate calculations are used.
+    */
+
+
+    const leftShoulder =
+        convertPoint(landmarks[11]);
+
+    const rightShoulder =
+        convertPoint(landmarks[12]);
+
+    const leftHip =
+        convertPoint(landmarks[23]);
+
+    const rightHip =
+        convertPoint(landmarks[24]);
+
+
+    /*
+        Calculate shoulder width.
+
+        Distance formula:
+
+        width = sqrt(
+            (x2-x1)^2 +
+            (y2-y1)^2
+        )
+    */
+
+    const shoulderWidth =
+        distance(
+
+            leftShoulder,
+
+            rightShoulder
+
+        );
+
+
+    /*
+        Calculate hip width.
+    */
+
+    const hipWidth =
+        distance(
+
+            leftHip,
+
+            rightHip
+
+        );
+
+
+    /*
+        Average body width.
+
+        This reduces sudden changes.
+    */
+
+    const bodyWidth =
+        (shoulderWidth + hipWidth) / 2;
+
+
+    /*
+        Calculate shoulder center.
+    */
+
+    const centerX =
+        (leftShoulder.x +
+         rightShoulder.x) / 2;
+
+
+    /*
+        Calculate shoulder Y position.
+    */
+
+    const shoulderY =
+        (leftShoulder.y +
+         rightShoulder.y) / 2;
+
+
+    /*
+        Calculate hip center.
+    */
+
+    const hipY =
+        (leftHip.y +
+         rightHip.y) / 2;
+
+
+    /*
+        Clothing dimensions.
+    */
+
+    const clothingWidth =
+        bodyWidth * 1.45;
+
+
+    const clothingHeight =
+        (hipY - shoulderY) * 1.35;
+
+
+    /*
+        Clothing starting position.
+    */
+
+    const x =
+        centerX -
+        clothingWidth / 2;
+
+
+    const y =
+        shoulderY -
+        clothingHeight * 0.08;
+
+
+    /*
+        Draw the selected clothing.
+    */
+
+    drawDress(
+
+        x,
+
+        y,
+
+        clothingWidth,
+
+        clothingHeight,
+
+        selectedDress
+
+    );
+
+}
+
+
+// ============================================================
+// CONVERT MEDIAPIPE POINT
+// ============================================================
+
+function convertPoint(point) {
+
+    return {
+
+        x:
+            point.x *
+            canvas.width,
+
+        y:
+            point.y *
+            canvas.height
+
+    };
+
+}
+
+
+// ============================================================
+// DISTANCE FUNCTION
+// ============================================================
+
+function distance(a,b) {
+
+    const dx =
+        b.x - a.x;
+
+    const dy =
+        b.y - a.y;
+
+
+    return Math.sqrt(
+
+        dx * dx +
+        dy * dy
+
+    );
+
+}
+
+
+// ============================================================
+// DRAW CLOTHING
+// ============================================================
+
+function drawDress(
+
+    x,
+
+    y,
+
+    width,
+
+    height,
+
+    dressId
+
+) {
+
+    const dress =
+        dresses[dressId];
+
+
+    /*
+        Save canvas state.
+    */
+
+    ctx.save();
+
+
+    /*
+        Make clothing slightly transparent
+        so the person's body remains visible.
+    */
+
+    ctx.globalAlpha = 0.88;
+
+
+    /*
+        Main clothing body.
+    */
+
+    ctx.fillStyle =
+        dress.color;
+
+
+    ctx.beginPath();
+
+
+    /*
+        Neck area.
+    */
+
+    ctx.moveTo(
+
+        x + width * 0.38,
+
+        y
+
+    );
+
+
+    ctx.quadraticCurveTo(
+
+        x + width * 0.50,
+
+        y + height * 0.08,
+
+        x + width * 0.62,
+
+        y
+
+    );
+
+
+    /*
+        Right shoulder.
+    */
+
+    ctx.lineTo(
+
+        x + width * 0.88,
+
+        y + height * 0.10
+
+    );
+
+
+    /*
+        Right side.
+    */
+
+    ctx.lineTo(
+
+        x + width,
+
+        y + height
+
+    );
+
+
+    /*
+        Bottom.
+    */
+
+    ctx.lineTo(
+
+        x,
+
+        y + height
+
+    );
+
+
+    /*
+        Left side.
+    */
+
+    ctx.lineTo(
+
+        x + width * 0.12,
+
+        y + height * 0.10
+
+    );
+
+
+    ctx.closePath();
+
+
+    ctx.fill();
+
+
+    /*
+        Clothing outline.
+    */
+
+    ctx.strokeStyle =
+        dress.secondary;
+
+
+    ctx.lineWidth = 5;
+
+
+    ctx.stroke();
+
+
+    /*
+        Add a center design.
+    */
+
+    ctx.fillStyle =
+        "rgba(255,255,255,0.25)";
+
+
+    ctx.fillRect(
+
+        x + width * 0.46,
+
+        y + height * 0.15,
+
+        width * 0.08,
+
+        height * 0.65
+
+    );
+
+
+    /*
+        Draw sleeves.
+    */
+
+    ctx.fillStyle =
+        dress.secondary;
+
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+
+        x + width * 0.12,
+
+        y + height * 0.10
+
+    );
+
+
+    ctx.lineTo(
+
+        x - width * 0.05,
+
+        y + height * 0.30
+
+    );
+
+
+    ctx.lineTo(
+
+        x + width * 0.10,
+
+        y + height * 0.38
+
+    );
+
+
+    ctx.closePath();
+
+
+    ctx.fill();
+
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+
+        x + width * 0.88,
+
+        y + height * 0.10
+
+    );
+
+
+    ctx.lineTo(
+
+        x + width * 1.05,
+
+        y + height * 0.30
+
+    );
+
+
+    ctx.lineTo(
+
+        x + width * 0.90,
+
+        y + height * 0.38
+
+    );
+
+
+    ctx.closePath();
+
+
+    ctx.fill();
+
+
+    /*
+        Restore canvas state.
+    */
+
+    ctx.restore();
+
+}
+
+
+// ============================================================
+// CAPTURE TRY-ON
+// ============================================================
+
+captureButton.addEventListener(
+
+    "click",
+
+    function() {
+
+        if(!personDetected) {
+
+            return;
+
+        }
+
+
+        /*
+            Draw the current video frame.
+        */
+
+        ctx.clearRect(
+
+            0,
+
+            0,
+
+            canvas.width,
+
+            canvas.height
+
+        );
+
+
+        /*
+            Mirror camera image.
+        */
+
+        ctx.save();
+
+
+        ctx.translate(
+
+            canvas.width,
+
+            0
+
+        );
+
+
+        ctx.scale(
+
+            -1,
+
+            1
+
+        );
+
+
+        ctx.drawImage(
+
+            video,
+
+            0,
+
+            0,
+
+            canvas.width,
+
+            canvas.height
+
+        );
+
+
+        ctx.restore();
+
+
+        /*
+            Run pose detection one more time
+            for the captured frame.
+        */
+
+        const result =
+            poseLandmarker.detectForVideo(
+
+                video,
+
+                performance.now()
+
+            );
+
+
+        if(
+
+            result.landmarks &&
+
+            result.landmarks.length > 0
+
+        ) {
+
+            const landmarks =
+                result.landmarks[0];
+
+
+            /*
+                Draw outfit again on captured image.
+            */
+
+            drawCapturedOutfit(
+                landmarks
+            );
+
+        }
+
+
+        /*
+            Convert canvas to image.
+        */
+
+        const image =
+            canvas.toDataURL(
+                "image/png"
+            );
+
+
+        capturedImage.src =
+            image;
+
+
+        preview.style.display =
+            "block";
+
+
+        /*
+            Generate matrix.
+        */
+
+        generateMatrix();
+
+
+        preview.scrollIntoView({
+
+            behavior: "smooth"
+
+        });
+
+
+        message.innerText =
+            "Your virtual try-on is ready!";
+
+    }
+
+);
+
+
+// ============================================================
+// DRAW CAPTURED OUTFIT
+// ============================================================
+
+function drawCapturedOutfit(landmarks) {
+
+    const leftShoulder =
+        convertPoint(landmarks[11]);
+
+    const rightShoulder =
+        convertPoint(landmarks[12]);
+
+    const leftHip =
+        convertPoint(landmarks[23]);
+
+    const rightHip =
+        convertPoint(landmarks[24]);
+
+
+    const shoulderWidth =
+        distance(
+
+            leftShoulder,
+
+            rightShoulder
+
+        );
+
+
+    const centerX =
+        (
+
+            leftShoulder.x +
+
+            rightShoulder.x
+
+        ) / 2;
+
+
+    const shoulderY =
+        (
+
+            leftShoulder.y +
+
+            rightShoulder.y
+
+        ) / 2;
+
+
+    const hipY =
+        (
+
+            leftHip.y +
+
+            rightHip.y
+
+        ) / 2;
+
+
+    const clothingWidth =
+        shoulderWidth * 1.45;
+
+
+    const clothingHeight =
+        (hipY - shoulderY) * 1.35;
+
+
+    const x =
+        centerX -
+        clothingWidth / 2;
+
+
+    const y =
+        shoulderY -
+        clothingHeight * 0.08;
+
+
+    drawDress(
+
+        x,
+
+        y,
+
+        clothingWidth,
+
+        clothingHeight,
+
+        selectedDress
+
+    );
+
+}
+
+
+// ============================================================
+// MATRIX GENERATION
+// ============================================================
+
+function generateMatrix() {
+
+    /*
+        We convert the image into a small
+        10 × 10 RGB matrix.
+
+        This demonstrates 2D arrays / matrices.
+    */
+
+    const imageData =
+        ctx.getImageData(
+
+            0,
+
+            0,
+
+            canvas.width,
+
+            canvas.height
+
+        );
+
+
+    const pixels =
+        imageData.data;
+
+
+    const rows = 10;
+
+    const columns = 10;
+
+
+    let matrix = [];
+
+
+    for(let i = 0; i < rows; i++) {
+
+        let row = [];
+
+
+        for(let j = 0; j < columns; j++) {
+
+            const x =
+                Math.floor(
+
+                    (j / columns) *
+                    canvas.width
+
+                );
+
+
+            const y =
+                Math.floor(
+
+                    (i / rows) *
+                    canvas.height
+
+                );
+
+
+            const index =
+                (y * canvas.width + x) * 4;
+
+
+            const pixel = [
+
+                pixels[index],
+
+                pixels[index + 1],
+
+                pixels[index + 2]
+
+            ];
+
+
+            row.push(pixel);
+
+        }
+
+
+        matrix.push(row);
+
+    }
+
+
+    /*
+        Display matrix.
+    */
+
+    matrixOutput.innerText =
+        JSON.stringify(
+
+            matrix,
+
+            null,
+
+            1
+
+        );
+
+}
+
+
+// ============================================================
+// OUTFIT SELECTION
+// ============================================================
+
+const outfitCards =
+    document.querySelectorAll(
+        ".outfitCard"
+    );
+
+
+for(let i = 0; i < outfitCards.length; i++) {
+
+    outfitCards[i].addEventListener(
+
+        "click",
+
+        function() {
+
+            selectedDress =
+                this.dataset.dress;
+
+
+            for(
+                let j = 0;
+                j < outfitCards.length;
+                j++
+            ) {
+
+                outfitCards[j]
+                    .classList
+                    .remove(
+                        "selected"
+                    );
+
+            }
+
+
+            this.classList.add(
+                "selected"
+            );
+
+
+            dressName.innerText =
+                dresses[
+                    selectedDress
+                ].name;
+
+
+            message.innerText =
+                dresses[
+                    selectedDress
+                ].name +
+                " selected.";
+
+        }
+
+    );
+
+}
+
+
+// ============================================================
+// RETAKE
+// ============================================================
+
+retakeButton.addEventListener(
+
+    "click",
+
+    function() {
+
+        preview.style.display =
+            "none";
+
+
+        startCamera();
+
+    }
+
+);
+
+
+// ============================================================
+// BUTTON EVENTS
+// ============================================================
+
+startButton.addEventListener(
+
+    "click",
+
+    startCamera
+
+);
+
+
+stopButton.addEventListener(
+
+    "click",
+
+    stopCamera
+
+);
+
+
+// ============================================================
+// LOAD MODEL
+// ============================================================
+
+loadPoseModel();
+
+</script>
+
+
+<style>
+
+/* ============================================================
+   GENERAL
+============================================================ */
+
+* {
+
+    box-sizing: border-box;
+
+    margin: 0;
+
+    padding: 0;
+
+}
+
+
+body {
+
+    font-family:
+        Arial,
+        sans-serif;
+
+    background:
+        #f4faf6;
+
+    color:
+        #1c2b22;
+
+}
+
+
+/* ============================================================
+   NAVBAR
+============================================================ */
+
+.navbar {
+
+    height:
+        70px;
+
+    background:
+        white;
+
+    border-bottom:
+        1px solid #e0ece4;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    padding:
+        0 7%;
+
+}
+
+
+.logo {
+
+    font-size:
+        25px;
+
+    font-weight:
+        800;
+
+}
+
+
+.logo span {
+
+    color:
+        #45a96c;
+
+}
+
+
+.nav-links {
+
+    display:
+        flex;
+
+    gap:
+        30px;
+
+}
+
+
+.nav-links span {
+
+    color:
+        #6b776f;
+
+    font-size:
+        14px;
+
+    font-weight:
+        600;
+
+}
+
+
+.nav-links .active {
+
+    color:
+        #45a96c;
+
+}
+
+
+.profile {
+
+    width:
+        38px;
+
+    height:
+        38px;
+
+    border-radius:
+        50%;
+
+    background:
+        #e5f5ea;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+}
+
+
+/* ============================================================
+   MAIN
+============================================================ */
+
+.container {
+
+    width:
+        90%;
+
+    max-width:
+        1200px;
+
+    margin:
+        auto;
+
+    padding:
+        50px 0;
+
+}
+
+
+.header {
+
+    text-align:
+        center;
+
+    margin-bottom:
+        40px;
+
+}
+
+
+.badge {
+
+    display:
+        inline-block;
+
+    background:
+        #e4f5e9;
+
+    color:
+        #35925a;
+
+    padding:
+        7px 15px;
+
+    border-radius:
+        30px;
+
+    font-size:
+        12px;
+
+    font-weight:
+        800;
+
+    margin-bottom:
+        15px;
+
+}
+
+
+.header h1 {
+
+    font-size:
+        clamp(42px, 6vw, 62px);
+
+    margin-bottom:
+        12px;
+
+}
+
+
+.header h1 span {
+
+    color:
+        #45a96c;
+
+}
+
+
+.header p {
+
+    color:
+        #718078;
+
+    line-height:
+        1.6;
+
+}
+
+
+/* ============================================================
+   MAIN CARD
+============================================================ */
+
+.mainCard {
+
+    background:
+        white;
+
+    border:
+        1px solid #e0ece4;
+
+    border-radius:
+        25px;
+
+    padding:
+        25px;
+
+    box-shadow:
+        0 15px 40px rgba(40,90,60,0.08);
+
+}
+
+
+/* ============================================================
+   CAMERA AREA
+============================================================ */
+
+.cameraWrapper {
+
+    width:
+        100%;
+
+    max-width:
+        850px;
+
+    margin:
+        auto;
+
+}
+
+
+.cameraBox {
+
+    position:
+        relative;
+
+    width:
+        100%;
+
+    aspect-ratio:
+        16 / 9;
+
+    background:
+        #dfeae3;
+
+    border-radius:
+        20px;
+
+    overflow:
+        hidden;
+
+}
+
+
+#camera {
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    object-fit:
+        cover;
+
+    transform:
+        scaleX(-1);
+
+}
+
+
+#tryOnCanvas {
+
+    position:
+        absolute;
+
+    top:
+        0;
+
+    left:
+        0;
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    pointer-events:
+        none;
+
+}
+
+
+/* ============================================================
+   STATUS
+============================================================ */
+
+.statusBox {
+
+    position:
+        absolute;
+
+    top:
+        15px;
+
+    left:
+        15px;
+
+    background:
+        rgba(255,255,255,0.94);
+
+    padding:
+        9px 15px;
+
+    border-radius:
+        30px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        8px;
+
+    font-size:
+        12px;
+
+    font-weight:
+        700;
+
+}
+
+
+.statusDot {
+
+    width:
+        9px;
+
+    height:
+        9px;
+
+    border-radius:
+        50%;
+
+    background:
+        #d65c5c;
+
+}
+
+
+.statusDot.searching {
+
+    background:
+        #e3a73d;
+
+}
+
+
+.statusDot.detected {
+
+    background:
+        #45a96c;
+
+}
+
+
+/* ============================================================
+   CONTROLS
+============================================================ */
+
+.controls {
+
+    display:
+        flex;
+
+    justify-content:
+        center;
+
+    gap:
+        12px;
+
+    flex-wrap:
+        wrap;
+
+    margin-top:
+        18px;
+
+}
+
+
+button {
+
+    border:
+        none;
+
+    border-radius:
+        12px;
+
+    padding:
+        13px 22px;
+
+    cursor:
+        pointer;
+
+    font-weight:
+        700;
+
+}
+
+
+button:disabled {
+
+    opacity:
+        0.45;
+
+    cursor:
+        not-allowed;
+
+}
+
+
+.primary {
+
+    background:
+        #45a96c;
+
+    color:
+        white;
+
+}
+
+
+.dark {
+
+    background:
+        #17251d;
+
+    color:
+        white;
+
+}
+
+
+.secondary {
+
+    background:
+        #e6f4ea;
+
+    color:
+        #34784d;
+
+}
+
+
+.message {
+
+    text-align:
+        center;
+
+    color:
+        #6e7b73;
+
+    font-size:
+        13px;
+
+    margin-top:
+        14px;
+
+}
+
+
+/* ============================================================
+   DRESSES
+============================================================ */
+
+.dressSection {
+
+    margin-top:
+        35px;
+
+}
+
+
+.dressSection h2 {
+
+    margin-bottom:
+        7px;
+
+}
+
+
+.subtitle {
+
+    color:
+        #77837c;
+
+    font-size:
+        14px;
+
+    margin-bottom:
+        20px;
+
+}
+
+
+.dressGrid {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(4,1fr);
+
+    gap:
+        18px;
+
+}
+
+
+.outfitCard {
+
+    border:
+        2px solid #e2ece5;
+
+    background:
+        white;
+
+    border-radius:
+        18px;
+
+    padding:
+        15px;
+
+    cursor:
+        pointer;
+
+    transition:
+        0.2s;
+
+}
+
+
+.outfitCard:hover {
+
+    transform:
+        translateY(-4px);
+
+}
+
+
+.outfitCard.selected {
+
+    border-color:
+        #45a96c;
+
+    background:
+        #f3fbf5;
+
+}
+
+
+.dressPreview {
+
+    height:
+        150px;
+
+    border-radius:
+        14px;
+
+    background:
+        #eef5f0;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    margin-bottom:
+        12px;
+
+    position:
+        relative;
+
+}
+
+
+/*
+    CSS dress previews.
+
+    These are actual clothing shapes rather than
+    simple emoji buttons.
+*/
+
+.dressShape {
+
+    width:
+        75px;
+
+    height:
+        110px;
+
+    clip-path:
+        polygon(
+            28% 0%,
+            72% 0%,
+            100% 28%,
+            82% 38%,
+            100% 100%,
+            0% 100%,
+            18% 38%,
+            0% 28%
+        );
+
+    border-radius:
+        8px;
+
+}
+
+
+.rose {
+
+    background:
+        #d86a87;
+
+}
+
+
+.blue {
+
+    background:
+        #4d91c7;
+
+}
+
+
+.denim {
+
+    background:
+        #426b91;
+
+}
+
+
+.ethnic {
+
+    background:
+        #d39a4a;
+
+}
+
+
+.outfitCard h3 {
+
+    text-align:
+        center;
+
+    font-size:
+        15px;
+
+}
+
+
+/* ============================================================
+   PREVIEW
+============================================================ */
+
+.preview {
+
+    display:
+        none;
+
+    margin-top:
+        35px;
+
+    padding:
+        20px;
+
+    background:
+        #f5faf7;
+
+    border-radius:
+        18px;
+
+}
+
+
+.preview h2 {
+
+    margin-bottom:
+        15px;
+
+}
+
+
+#capturedImage {
+
+    width:
+        100%;
+
+    max-height:
+        650px;
+
+    object-fit:
+        contain;
+
+    border-radius:
+        15px;
+
+    background:
+        #dfeae3;
+
+}
+
+
+/* ============================================================
+   MATRIX
+============================================================ */
+
+.matrixSection {
+
+    margin-top:
+        35px;
+
+    background:
+        #17251d;
+
+    color:
+        white;
+
+    padding:
+        25px;
+
+    border-radius:
+        18px;
+
+}
+
+
+.matrixSection h2 {
+
+    margin-bottom:
+        8px;
+
+}
+
+
+.matrixSection p {
+
+    color:
+        #b8c5bd;
+
+    font-size:
+        13px;
+
+    line-height:
+        1.6;
+
+    margin-bottom:
+        15px;
+
+}
+
+
+#matrixOutput {
+
+    background:
+        #0d1711;
+
+    color:
+        #9ee4b4;
+
+    padding:
+        15px;
+
+    border-radius:
+        10px;
+
+    max-height:
+        250px;
+
+    overflow:
+        auto;
+
+    font-family:
+        monospace;
+
+    font-size:
+        10px;
+
+}
+
+
+/* ============================================================
+   FOOTER
+============================================================ */
+
+footer {
+
+    margin-top:
+        50px;
+
+    padding:
+        30px 7%;
+
+    background:
+        #17251d;
+
+    color:
+        white;
+
+    display:
+        flex;
+
+    justify-content:
+        space-between;
+
+}
+
+
+footer strong {
+
+    color:
+        #67c888;
+
+}
+
+
+footer span {
+
+    color:
+        #aab6ae;
+
+    font-size:
+        13px;
+
+}
+
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+
+@media(max-width:800px) {
+
+    .nav-links {
+
+        display:
+            none;
+
+    }
+
+
+    .dressGrid {
+
+        grid-template-columns:
+            repeat(2,1fr);
+
+    }
+
+}
+
+
+@media(max-width:500px) {
+
+    .container {
+
+        width:
+            94%;
+
+    }
+
+
+    .dressGrid {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+
+    footer {
+
+        flex-direction:
+            column;
+
+        gap:
+            10px;
+
+    }
+
+}
+
+</style>
+
+
+<!-- ==========================================================
+     HTML UI
+========================================================== -->
+
+<nav class="navbar">
+
+    <div class="logo">
+
+        Wear<span>Verse</span>
+
+    </div>
+
+
+    <div class="nav-links">
+
+        <span>Home</span>
+
+        <span>Shop</span>
+
+        <span>Rent</span>
+
+        <span class="active">
+            Virtual Try-On
+        </span>
+
+    </div>
+
+
+    <div class="profile">
+        👤
+    </div>
+
+</nav>
+
+
+<main class="container">
+
+
+<section class="header">
+
+    <div class="badge">
+        ✨ AI VIRTUAL TRY-ON
+    </div>
+
+    <h1>
+        Try Before You <span>Wear</span>
+    </h1>
+
+    <p>
+        Select an outfit and see a live virtual
+        preview based on your body position.
+    </p>
+
+</section>
+
+
+<section class="mainCard">
+
+
+<div class="cameraWrapper">
+
+
+<div class="cameraBox">
+
+    <video
+        id="camera"
+        autoplay
+        playsinline
+        muted
+    ></video>
+
+
+    <canvas
+        id="tryOnCanvas"
+    ></canvas>
+
+
+    <div class="statusBox">
+
+        <div
+            id="statusDot"
+            class="statusDot"
+        ></div>
+
+        <span id="status">
+            Camera not started
+        </span>
+
+    </div>
+
+</div>
+
+
+<div class="controls">
+
+    <button
+        id="startCamera"
+        class="primary"
+        disabled
+    >
+        📷 Start Camera
+    </button>
+
+
+    <button
+        id="capture"
+        class="dark"
+        disabled
+    >
+        📸 Capture Try-On
+    </button>
+
+
+    <button
+        id="stopCamera"
+        class="secondary"
+        disabled
+    >
+        Stop Camera
+    </button>
+
+</div>
+
+
+<div id="message" class="message">
+
+    Loading body detection model...
+
+</div>
+
+
+</div>
+
+
+<!-- DRESS SELECTION -->
+
+
+<section class="dressSection">
+
+    <h2>
+        Choose Your Outfit
+    </h2>
+
+    <p class="subtitle">
+
+        Select a dress and it will appear
+        on your detected body.
+
+    </p>
+
+
+    <div class="dressGrid">
+
+
+        <div
+            class="outfitCard selected"
+            data-dress="dress1"
+        >
+
+            <div class="dressPreview">
+
+                <div
+                    class="dressShape rose"
+                ></div>
+
+            </div>
+
+            <h3>
+                Rose Dress
+            </h3>
+
+        </div>
+
+
+        <div
+            class="outfitCard"
+            data-dress="dress2"
+        >
+
+            <div class="dressPreview">
+
+                <div
+                    class="dressShape blue"
+                ></div>
+
+            </div>
+
+            <h3>
+                Blue Casual
+            </h3>
+
+        </div>
+
+
+        <div
+            class="outfitCard"
+            data-dress="dress3"
+        >
+
+            <div class="dressPreview">
+
+                <div
+                    class="dressShape denim"
+                ></div>
+
+            </div>
+
+            <h3>
+                Denim Jacket
+            </h3>
+
+        </div>
+
+
+        <div
+            class="outfitCard"
+            data-dress="dress4"
+        >
+
+            <div class="dressPreview">
+
+                <div
+                    class="dressShape ethnic"
+                ></div>
+
+            </div>
+
+            <h3>
+                Ethnic Style
+            </h3>
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+<div class="preview" id="preview">
+
+    <h2>
+        Your Virtual Try-On
+    </h2>
+
+    <img
+        id="capturedImage"
+        alt="Virtual try-on result"
+    >
+
+
+    <div class="controls">
+
+        <button
+            id="retake"
+            class="primary"
+        >
+            🔄 Try Another Outfit
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- MATRIX -->
+
+
+<section class="matrixSection">
+
+    <h2>
+        🧮 Body & Image Matrix
+    </h2>
+
+    <p>
+
+        The captured frame is represented as a
+        two-dimensional matrix of RGB pixel values.
+        Body landmarks are also represented using
+        coordinate values.
+
+    </p>
+
+
+    <pre id="matrixOutput">
+Matrix will appear after capture.
+    </pre>
+
+</section>
+
+
+</section>
+
+</main>
+
+
+<footer>
+
+    <strong>
+        WearVerse
+    </strong>
+
+    <span>
+        Give Your Clothes a Second Life ♻️
+    </span>
+
+</footer>
+
+
+<script>
+
+/*
+    IMPORTANT:
+
+    The first script is a module because MediaPipe Pose
+    is imported from its CDN.
+
+    All UI logic is connected to that module.
+*/
+
+</script>
+
+</body>
+
+</html>
+```

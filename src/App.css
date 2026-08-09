@@ -1,0 +1,1110 @@
+/* =========================================================
+   WEARVERSE - APP CSS
+   ========================================================= */
+
+/* ---------- RESET ---------- */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f5f7f4;
+  color: #26382f;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+}
+
+input {
+  font-family: inherit;
+}
+
+
+/* =========================================================
+   LOGIN PAGE
+   ========================================================= */
+
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 90px;
+  padding: 40px;
+  background: linear-gradient(135deg, #edf4ef, #eee5d9);
+}
+
+
+/* ---------- LOGIN CARD ---------- */
+
+.login-card {
+  width: 410px;
+  padding: 42px;
+  background: white;
+  border-radius: 25px;
+  box-shadow: 0 20px 60px rgba(30, 60, 45, 0.15);
+}
+
+.login-logo {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #174d39;
+  color: white;
+  font-size: 25px;
+  font-weight: bold;
+}
+
+.login-card h1 {
+  margin: 17px 0 4px;
+  letter-spacing: 2px;
+}
+
+.tagline {
+  margin: 0;
+  color: #809087;
+  font-size: 9px;
+  letter-spacing: 2px;
+}
+
+.welcome {
+  margin: 35px 0 25px;
+}
+
+.welcome h2 {
+  margin: 0 0 6px;
+}
+
+.welcome p {
+  color: #7b8780;
+  font-size: 13px;
+}
+
+
+/* ---------- LOGIN INPUTS ---------- */
+
+.login-card label {
+  display: block;
+  margin: 15px 0 7px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #d9e3dc;
+  border-radius: 9px;
+  outline: none;
+  background: #fafcfb;
+}
+
+.login-card input:focus {
+  border-color: #39805a;
+  box-shadow: 0 0 0 3px rgba(57, 128, 90, 0.1);
+}
+
+
+/* ---------- LOGIN BUTTONS ---------- */
+
+.login-btn,
+.guest-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 9px;
+  margin-top: 18px;
+  font-weight: bold;
+}
+
+.login-btn {
+  background: #174d39;
+  color: white;
+  border: none;
+}
+
+.login-btn:hover {
+  background: #123d2d;
+}
+
+.guest-btn {
+  background: white;
+  color: #174d39;
+  border: 1px solid #c8d8ce;
+}
+
+.guest-btn:hover {
+  background: #edf4ef;
+}
+
+.login-bottom {
+  text-align: center;
+  color: #89958e;
+  font-size: 11px;
+  margin-top: 25px;
+}
+
+
+/* ---------- LOGIN SIDE ---------- */
+
+.login-side h2,
+.login-side h3 {
+  font-size: 45px;
+  margin: 0;
+}
+
+.login-side h3 {
+  color: #39805a;
+}
+
+.login-side p {
+  color: #718077;
+}
+
+.eco-circle {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: #dcece2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 65px;
+  margin-bottom: 25px;
+}
+
+
+/* =========================================================
+   MAIN APPLICATION
+   ========================================================= */
+
+.app {
+  min-height: 100vh;
+}
+
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+.sidebar {
+  width: 245px;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: #183f31;
+  color: white;
+  padding: 25px 15px;
+  z-index: 5;
+}
+
+
+/* ---------- BRAND ---------- */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px 30px;
+}
+
+.brand-logo {
+  width: 43px;
+  height: 43px;
+  border-radius: 12px;
+  background: #dcece2;
+  color: #174d39;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.brand b {
+  display: block;
+  font-size: 14px;
+  letter-spacing: 1.5px;
+}
+
+.brand small {
+  color: #9bb4a7;
+  font-size: 7px;
+  letter-spacing: 1.5px;
+}
+
+
+/* ---------- MENU ---------- */
+
+.menu-label {
+  color: #819c8e;
+  font-size: 9px;
+  letter-spacing: 2px;
+  padding-left: 12px;
+}
+
+.nav-button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: #b9c9c0;
+  text-align: left;
+  font-size: 13px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 4px 0;
+}
+
+.nav-button span {
+  width: 20px;
+  text-align: center;
+}
+
+.nav-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+.nav-button.active {
+  background: #dcece2;
+  color: #174d39;
+  font-weight: bold;
+}
+
+
+/* ---------- SIDEBAR BOTTOM ---------- */
+
+.sidebar-bottom {
+  position: absolute;
+  left: 15px;
+  right: 15px;
+  bottom: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 10px;
+}
+
+.logout {
+  color: #d8aaa0;
+}
+
+.logout:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+
+/* =========================================================
+   MAIN CONTENT
+   ========================================================= */
+
+.main {
+  margin-left: 245px;
+  min-height: 100vh;
+}
+
+
+/* =========================================================
+   TOP NAVIGATION BAR
+   ========================================================= */
+
+.topbar {
+  height: 75px;
+  background: white;
+  border-bottom: 1px solid #e0e7e2;
+  display: flex;
+  align-items: center;
+  padding: 0 35px;
+  position: sticky;
+  top: 0;
+  z-index: 4;
+}
+
+
+/* ---------- SEARCH ---------- */
+
+.search {
+  width: 450px;
+  height: 43px;
+  background: #f8faf9;
+  border: 1px solid #dce5df;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+}
+
+.search span {
+  font-size: 20px;
+  color: #718077;
+}
+
+.search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #26382f;
+}
+
+.search input::placeholder {
+  color: #9aa59f;
+}
+
+
+/* ---------- TOP RIGHT ---------- */
+
+.top-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.top-right button {
+  border: none;
+  background: transparent;
+  font-size: 19px;
+}
+
+.top-right button:hover {
+  color: #39805a;
+}
+
+
+/* ---------- USER ---------- */
+
+.user {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin-left: 10px;
+}
+
+.avatar,
+.big-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #dcece2;
+  color: #174d39;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.user b,
+.user small {
+  display: block;
+}
+
+.user b {
+  font-size: 12px;
+}
+
+.user small {
+  color: #89958e;
+  font-size: 9px;
+}
+
+
+/* =========================================================
+   COMMON PAGE
+   ========================================================= */
+
+.page {
+  padding: 35px 42px 60px;
+  max-width: 1450px;
+  margin: auto;
+}
+
+.page-heading {
+  margin-bottom: 30px;
+}
+
+.page-heading h1 {
+  font-size: 40px;
+  margin: 8px 0;
+}
+
+.page-heading p {
+  color: #748078;
+  max-width: 650px;
+  line-height: 1.6;
+}
+
+.label {
+  color: #39805a;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 1.5px;
+}
+
+
+/* =========================================================
+   HERO
+   ========================================================= */
+
+.hero {
+  min-height: 420px;
+  padding: 50px;
+  border-radius: 20px;
+  background: linear-gradient(120deg, #e3efe8, #f1e6d8);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+.hero h1 {
+  font-size: 57px;
+  line-height: 1;
+  margin: 18px 0;
+  letter-spacing: -2px;
+}
+
+.hero h1 em {
+  color: #39805a;
+  font-style: normal;
+}
+
+.hero p {
+  color: #68766e;
+  max-width: 520px;
+  line-height: 1.7;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+
+/* ---------- COMMON BUTTONS ---------- */
+
+.primary,
+.secondary {
+  padding: 13px 20px;
+  border-radius: 9px;
+  font-weight: bold;
+}
+
+.primary {
+  border: none;
+  background: #174d39;
+  color: white;
+}
+
+.primary:hover {
+  background: #123d2d;
+}
+
+.secondary {
+  border: 1px solid #bfd0c5;
+  background: white;
+  color: #174d39;
+}
+
+.secondary:hover {
+  background: #edf4ef;
+}
+
+
+/* ---------- HERO ART ---------- */
+
+.hero-art {
+  width: 370px;
+  height: 320px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fashion {
+  width: 230px;
+  height: 260px;
+  border-radius: 120px 120px 25px 25px;
+  background: #d0e3d8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 90px;
+  animation: float 4s infinite ease-in-out;
+}
+
+.approved,
+.eco {
+  position: absolute;
+  background: white;
+  border-radius: 11px;
+  padding: 11px;
+  box-shadow: 0 10px 30px rgba(40, 60, 45, 0.13);
+}
+
+.approved {
+  right: 0;
+  top: 10px;
+  color: #2e7952;
+  font-size: 9px;
+  font-weight: bold;
+}
+
+.approved small {
+  color: #89958e;
+}
+
+.eco {
+  bottom: 15px;
+  left: 0;
+  background: #214e3b;
+  color: white;
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+
+.eco span {
+  font-size: 9px;
+}
+
+
+/* =========================================================
+   SECTIONS
+   ========================================================= */
+
+.section {
+  margin-top: 45px;
+}
+
+.section h2 {
+  margin: 7px 0 20px;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+}
+
+.view {
+  border: none;
+  background: transparent;
+  color: #39805a;
+  font-weight: bold;
+}
+
+.view:hover {
+  color: #174d39;
+}
+
+
+/* =========================================================
+   CATEGORIES
+   ========================================================= */
+
+.categories {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+.category {
+  background: white;
+  border: 1px solid #e0e7e2;
+  border-radius: 13px;
+  padding: 17px;
+  text-align: left;
+}
+
+.category:hover {
+  border-color: #b9cdbf;
+  box-shadow: 0 10px 25px rgba(30, 60, 45, 0.08);
+}
+
+.category span,
+.category b,
+.category small {
+  display: block;
+}
+
+.category span {
+  font-size: 30px;
+  margin-bottom: 12px;
+}
+
+.category b {
+  font-size: 13px;
+}
+
+.category small {
+  color: #39805a;
+  margin-top: 7px;
+  font-size: 9px;
+}
+
+
+/* =========================================================
+   PRODUCTS
+   ========================================================= */
+
+.products {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.product {
+  background: white;
+  border: 1px solid #e0e7e2;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: 0.25s ease;
+}
+
+.product:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 30px rgba(30, 60, 45, 0.1);
+}
+
+.product-image {
+  height: 200px;
+  background: linear-gradient(135deg, #e4eee8, #eee4d6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.product-icon {
+  font-size: 80px;
+}
+
+.badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #287650;
+  color: white;
+  padding: 6px 8px;
+  border-radius: 15px;
+  font-size: 8px;
+  font-weight: bold;
+}
+
+.heart {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: white;
+  font-size: 16px;
+}
+
+.heart:hover {
+  color: #39805a;
+}
+
+.product-info {
+  padding: 15px;
+}
+
+.product-info > small {
+  color: #89958e;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.product-info h3 {
+  font-size: 14px;
+  margin: 7px 0;
+}
+
+.product-info p {
+  color: #39805a;
+  font-size: 10px;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+}
+
+.price-row b {
+  font-size: 17px;
+}
+
+.price-row span {
+  background: #edf4ef;
+  color: #39805a;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 9px;
+}
+
+
+/* =========================================================
+   FEATURE PAGES
+   ========================================================= */
+
+.feature {
+  background: white;
+  border: 1px solid #e0e7e2;
+  border-radius: 18px;
+  padding: 50px;
+  text-align: center;
+  max-width: 900px;
+  margin: auto;
+}
+
+.feature h2 {
+  margin-bottom: 10px;
+}
+
+.feature p {
+  color: #78857e;
+  max-width: 550px;
+  margin: 10px auto 25px;
+  line-height: 1.6;
+}
+
+.big-icon {
+  width: 75px;
+  height: 75px;
+  margin: auto;
+  border-radius: 20px;
+  background: #e0eee5;
+  color: #287650;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+
+
+/* =========================================================
+   UPLOAD STEPS
+   ========================================================= */
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 40px;
+}
+
+.steps div {
+  padding: 16px;
+  background: #f4f7f4;
+  border-radius: 9px;
+}
+
+.steps b,
+.steps span {
+  display: block;
+}
+
+.steps b {
+  color: #39805a;
+  margin-bottom: 5px;
+}
+
+.steps span {
+  font-size: 10px;
+}
+
+
+/* =========================================================
+   VIRTUAL TRY-ON
+   ========================================================= */
+
+.tryon {
+  background: white;
+  border: 1px solid #e0e7e2;
+  border-radius: 18px;
+  min-height: 420px;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  overflow: hidden;
+}
+
+.tryon-box {
+  margin: 30px;
+  border: 2px dashed #b9cdbf;
+  border-radius: 15px;
+  background: #edf4ef;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 30px;
+}
+
+.tryon-box span {
+  color: #39805a;
+  font-size: 45px;
+}
+
+.tryon-box p {
+  color: #7b8780;
+  max-width: 330px;
+}
+
+.try-steps {
+  padding: 35px;
+}
+
+.try-steps p {
+  padding: 13px 0;
+  border-bottom: 1px solid #edf0ee;
+  font-size: 13px;
+}
+
+.try-steps b {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  background: #e0eee5;
+  color: #287650;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+}
+
+
+/* =========================================================
+   PROFILE
+   ========================================================= */
+
+.profile {
+  max-width: 700px;
+  margin: auto;
+  padding: 45px;
+  background: white;
+  border: 1px solid #e0e7e2;
+  border-radius: 18px;
+  text-align: center;
+}
+
+.big-avatar {
+  width: 80px;
+  height: 80px;
+  font-size: 27px;
+  margin: auto;
+}
+
+.profile > p {
+  color: #89958e;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: 30px;
+  padding-top: 25px;
+  border-top: 1px solid #e5eae7;
+}
+
+.stats b,
+.stats small {
+  display: block;
+}
+
+.stats b {
+  font-size: 22px;
+  color: #174d39;
+}
+
+.stats small {
+  color: #89958e;
+  margin-top: 5px;
+}
+
+
+/* =========================================================
+   ANIMATION
+   ========================================================= */
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 1100px) {
+  .categories {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .products {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .hero {
+    gap: 30px;
+  }
+
+  .hero h1 {
+    font-size: 48px;
+  }
+}
+
+
+/* =========================================================
+   SMALL TABLET
+   ========================================================= */
+
+@media (max-width: 800px) {
+  .sidebar {
+    width: 70px;
+  }
+
+  .brand div:last-child,
+  .menu-label {
+    display: none;
+  }
+
+  .nav-button {
+    justify-content: center;
+    font-size: 0;
+  }
+
+  .nav-button span {
+    font-size: 17px;
+  }
+
+  .main {
+    margin-left: 70px;
+  }
+
+  .topbar {
+    padding: 0 15px;
+  }
+
+  .search {
+    width: 100%;
+  }
+
+  .user {
+    display: none;
+  }
+
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-art {
+    width: 100%;
+  }
+
+  .tryon {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+  .login-screen {
+    padding: 20px;
+  }
+
+  .login-side {
+    display: none;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 410px;
+    padding: 30px;
+  }
+
+  .page {
+    padding: 25px 18px;
+  }
+
+  .categories,
+  .products {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    padding: 30px;
+  }
+
+  .hero h1 {
+    font-size: 40px;
+  }
+
+  .hero-art {
+    width: 100%;
+    height: 280px;
+  }
+
+  .fashion {
+    width: 190px;
+    height: 220px;
+  }
+
+  .steps {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .top-right {
+    gap: 5px;
+  }
+
+  .search {
+    height: 40px;
+  }
+}
