@@ -108,9 +108,9 @@ export default function LoginPage({ onLoginSuccess }) {
         {/* Brand Emblem Logo & Title */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "24px" }}>
           <img
-            src="/wearverse-logo.svg"
+            src="/wearverse-logo.png"
             alt="WearVerse Logo"
-            style={{ width: "70px", height: "70px", borderRadius: "50%", marginBottom: "12px" }}
+            style={{ width: "80px", height: "80px", borderRadius: "50%", marginBottom: "12px", objectFit: "contain" }}
           />
           <h1 style={{ margin: "0 0 4px", fontSize: "28px", color: "#183f31", fontFamily: "Georgia, serif" }}>
             WearVerse

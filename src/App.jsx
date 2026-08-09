@@ -51,7 +51,7 @@ function AppShell() {
         <div className="nav-container-inner">
           {/* TOP LEFT: WearVerse Emblem Logo & Tagline */}
           <div className="brand-logo-box" onClick={() => setPage(role === "seller" ? "Upload" : "Home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}>
-            <img src="/wearverse-logo.svg" alt="WearVerse Logo" style={{ width: "42px", height: "42px", borderRadius: "50%" }} />
+            <img src="/wearverse-logo.png" alt="WearVerse Logo" style={{ width: "46px", height: "46px", borderRadius: "50%", background: "white", objectFit: "contain", padding: "2px" }} />
             <div className="brand-text">
               <span className="brand-title" style={{ fontFamily: "Georgia, serif", fontWeight: "900", fontSize: "20px", letterSpacing: "1px", color: "white" }}>WearVerse</span>
               <small className="brand-sub" style={{ color: "#a3cfbb", fontSize: "8px", fontWeight: "bold", letterSpacing: "1.2px" }}>
