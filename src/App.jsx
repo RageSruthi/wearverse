@@ -36,7 +36,17 @@ function AppShell() {
   } = useStore();
 
   if (!isAuthenticated) {
-    return <LoginPage onLoginSuccess={() => setPage("Home")} />;
+    return (
+      <LoginPage
+        onLoginSuccess={(loggedInRole) => {
+          if (loggedInRole === "seller" || role === "seller") {
+            setPage("Upload");
+          } else {
+            setPage("Home");
+          }
+        }}
+      />
+    );
   }
 
   const navItems =

@@ -21,20 +21,20 @@ export default function CheckoutModal({ onClose, onOrderPlaced }) {
   const deliveryFee = subtotal > 999 ? 0 : 79;
   const total = subtotal + deliveryFee;
 
-  function handlePlaceOrder(e) {
+  async function handlePlaceOrder(e) {
     e.preventDefault();
     if (!address.fullName || !address.street || !address.city || !address.pincode) {
       alert("Please fill in your delivery address details.");
       return;
     }
 
-    const order = placeOrder({
+    const order = await placeOrder({
       total,
       paymentMethod,
       deliveryAddress: `${address.fullName}, ${address.street}, ${address.city} - ${address.pincode} (Ph: ${address.phone})`,
     });
 
-    if (order) {
+    if (order && order.id) {
       setCreatedOrder(order);
       setStep("success");
     }

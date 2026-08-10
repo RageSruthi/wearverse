@@ -310,7 +310,7 @@ export function StoreProvider({ children }) {
 
     // Check for rentals in cart and add to rentals list
     const rentalItems = cart.filter((i) => i.selectedMode === "rent" || i.rentalStart);
-    rentalItems.forEach(async (r) => {
+    for (const r of rentalItems) {
       const newRental = {
         id: `rent-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         orderId: newOrder.id,
@@ -332,7 +332,7 @@ export function StoreProvider({ children }) {
       } catch (err) {
         console.warn("Firestore rental sync fallback:", err.message);
       }
-    });
+    }
 
     clearCart();
 

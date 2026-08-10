@@ -1020,3 +1020,210 @@
     align-items: stretch;
   }
 }
+
+/* ==========================================================================
+   LOGIN PAGE LUXURY STYLING & GLASSMORPHISM
+   ========================================================================== */
+.login-page-bg {
+  min-height: 100vh;
+  width: 100%;
+  background: linear-gradient(135deg, #0d271e 0%, #153e30 40%, #081913 100%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-family: inherit;
+}
+
+.login-bg-glow-1 {
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, rgba(46, 117, 89, 0.35) 0%, rgba(0,0,0,0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(40px);
+}
+
+.login-bg-glow-2 {
+  position: absolute;
+  bottom: -15%;
+  right: -10%;
+  width: 55vw;
+  height: 55vw;
+  background: radial-gradient(circle, rgba(163, 207, 187, 0.25) 0%, rgba(0,0,0,0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(50px);
+}
+
+.login-wrapper-container {
+  width: 100%;
+  max-width: 540px;
+  position: relative;
+  z-index: 2;
+}
+
+.login-glass-card {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 28px;
+  padding: 40px 36px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35), 0 0 1px rgba(255, 255, 255, 0.5) inset;
+}
+
+.login-pills-scroll {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.login-pill-badge {
+  background: rgba(23, 77, 57, 0.08);
+  color: #174d39;
+  border: 1px solid rgba(23, 77, 57, 0.15);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.login-role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.login-role-card {
+  background: #f7faf8;
+  border: 2px solid #e1ebe4;
+  border-radius: 14px;
+  padding: 14px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.login-role-card:hover {
+  border-color: #276749;
+  background: #f0f7f3;
+  transform: translateY(-2px);
+}
+
+.login-role-card.selected {
+  border-color: #174d39;
+  background: #edf6f1;
+  box-shadow: 0 4px 12px rgba(23, 77, 57, 0.12);
+}
+
+.login-role-card .role-icon {
+  font-size: 24px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.login-role-card .role-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #174d39;
+  display: block;
+}
+
+.login-role-card .role-desc {
+  font-size: 10px;
+  color: #556b60;
+  font-weight: 600;
+  display: block;
+  margin-top: 2px;
+}
+
+.input-with-eye {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-eye input {
+  width: 100%;
+  padding: 12px 42px 12px 14px;
+  border: 1.5px solid #d4dfd8;
+  border-radius: 12px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-with-eye input:focus {
+  border-color: #174d39;
+  box-shadow: 0 0 0 3px rgba(23, 77, 57, 0.12);
+}
+
+.eye-toggle-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.quick-demo-box {
+  background: #f4f8f5;
+  border: 1px solid #e2ebe5;
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 24px;
+  text-align: center;
+}
+
+.quick-demo-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #276749;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.quick-btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.quick-btn {
+  flex: 1;
+  min-width: 130px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #c3dbce;
+  background: #ffffff;
+  color: #174d39;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-btn:hover {
+  background: #174d39;
+  color: #ffffff;
+  border-color: #174d39;
+}
+
